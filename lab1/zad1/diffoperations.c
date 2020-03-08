@@ -126,6 +126,48 @@ int operations_counter(struct array_struct *main_array, int index){
     return main_array->array[index].size;
 }
 
-void remove_block(int index);             // removes from the block array, block of a given indeks
+void remove_block(struct array_struct *main_array,int index){
 
-void remove_operation(int block_index, int operation_index);     // removes from the block table cell with a given index, operation with asecond given index
+    if(main_array->size<=index){
+        printf("main array doesn't contain field(block) with given index - given index is bigger than array size");
+        return;
+    }
+
+    if(main_array->array[index].block==NULL){
+        printf("under this address is nothing, actually - element has been deleted before of never added");
+        return;
+    }
+
+    free(main_array->array[index].block);
+
+    main_array->array[index].size=0;
+    main_array->array[index].block=NULL;
+
+}
+
+void remove_operation(struct array_struct *main_array,int block_index, int operation_index){
+
+    if(main_array->size<=block_index){
+        printf("main array doesn't contain field(block) with given index - given index is bigger than array size");
+        return;
+    }
+
+    if(main_array->array[block_index].block==NULL){
+        printf("under this address is nothing, actually - element(block) has been deleted before of never added");
+        return;
+    }
+
+    if(main_array->array[block_index].size<=operation_index){
+        printf("block array doesn't contain field(operation) with given index - given index is bigger than array size");
+        return;
+    }
+    if(main_array->array[block_index].block[operation_index]==NULL){
+        printf("under this address is nothing, actually - element(operation) has been deleted before of never added");
+        return;
+    }
+
+    free(main_array->array[block_index].block[operation_index]);
+
+    main_array->array[block_index].block[operation_index]=NULL;
+
+}

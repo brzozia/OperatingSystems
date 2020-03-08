@@ -25,6 +25,6 @@ int create_blocks(char *fname, struct array_struct *main_array, int pair_no);   
 
 int operations_counter(struct array_struct *main_array,int index);       // returns number of operations in the given block index
 
-void remove_block(int index);             // removes from the block array, block of a given indeks
+void remove_block(struct array_struct *main_array,int index);             // removes from the block array, block of a given indeks
 
-void remove_operation(int block_index, int operation_index);     // removes from the block array cell with a given index, operation with asecond given index
+void remove_operation(struct array_struct *main_array,int block_index, int operation_index);     // removes from the block array cell with a given index, operation with asecond given index
