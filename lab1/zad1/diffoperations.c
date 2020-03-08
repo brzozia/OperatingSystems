@@ -82,21 +82,49 @@ int create_blocks(char *fname, struct array_struct *main_array, int pair_no){
     }
 
     char *buffer = (char*)calloc(255, sizeof(char));
-    int op_c=0;
+    int op_c=0, size=0;
 
     while(fgets(buffer,255,fptr)!=NULL){                            // counts number of edition blocks
         if(buffer[0]!=60 && buffer[0]!=62 && buffer[0]!=45)         // 60=='<' 62=='>' 45=='-'
             op_c++;
+        size+=strlen(buffer);
     }
 
     main_array->array[pair_no].block = (char**) calloc (op_c, sizeof(char*));
     main_array->array[pair_no].size=op_c;
 
+    rewind(fptr);
+    char *str=(char*)calloc(size,sizeof(char));
+    int k=0;
+
+     while(fgets(buffer,255,fptr)!=NULL){
+
+        if(buffer[0]!=60 && buffer[0]!=62 && buffer[0]!=45){
+
+            if(strcmp(str,"")!=0){
+                strcpy(main_array->array[pair_no].block[k],str);
+                k++;
+                str="";
+            }
+            strcpy(str,buffer);
+        }
+        else{
+            strcat(str,buffer);
+        }
+     }
+     strcpy(main_array->array[pair_no].block[k],str);               //adds last operations
+
+     //free(str);
+     //free(buffer);
+     fclose(fptr);
+     return pair_no;
 
 }
 
 
-int operations_counter(int index);       // returns number of operations in the given block index
+int operations_counter(struct array_struct *main_array, int index){
+    return main_array->array[index].size;
+}
 
 void remove_block(int index);             // removes from the block array, block of a given indeks
 

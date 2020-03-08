@@ -23,7 +23,7 @@ void compare_pairs(int size, char **input, struct array_struct *main_array);
 
 int create_blocks(char *fname, struct array_struct *main_array, int pair_no);               // creates block of operations from a given file and returns index of main array, which refers to created block
 
-int operations_counter(int index);       // returns number of operations in the given block index
+int operations_counter(struct array_struct *main_array,int index);       // returns number of operations in the given block index
 
 void remove_block(int index);             // removes from the block array, block of a given indeks
 
