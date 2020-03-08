@@ -10,6 +10,7 @@ struct array_struct *create_array(int size){
         return NULL;
 
     struct array_struct *new_array;
+    new_array = (struct array_struct*) calloc(1, sizeof(struct array_struct));
     new_array->array = (struct block_struct*) calloc (size, sizeof(struct block_struct));
     new_array->size = size;
 
@@ -52,6 +53,7 @@ void compare_pairs(int size, char **input,struct array_struct *main_array){ ///c
     struct pair_struct *sequence = def_sequence(size,input);
 
     char *command=(char*) calloc(60, sizeof(char));
+    int p=0;
 
     for(int i=0;i<size+1;i++){
         for(int j=0;j<60;j++)
@@ -68,7 +70,12 @@ void compare_pairs(int size, char **input,struct array_struct *main_array){ ///c
         char *fname = (char*) calloc(11,sizeof(char));
         fname="diffres.tmp";
 
-        create_blocks(fname, main_array, i);
+
+        while(main_array->array[p].block!=NULL)
+            p++;
+
+        create_blocks(fname, main_array, p);
+        p++;
     }
 }
 
@@ -169,5 +176,19 @@ void remove_operation(struct array_struct *main_array,int block_index, int opera
     free(main_array->array[block_index].block[operation_index]);
 
     main_array->array[block_index].block[operation_index]=NULL;
+
+}
+
+
+
+
+
+
+int main(int argc, char **argv){
+    struct array_struct *main_arr = create_array(1);
+    char *ptr[]={argv[4]};
+    compare_pairs(1,ptr,main_arr);
+
+
 
 }
