@@ -23,21 +23,23 @@ struct pair_struct *def_sequence(int size, char **input){
     struct pair_struct *sequence;
     sequence = (struct pair_struct*) calloc (size, sizeof(struct pair_struct));
 
-    for(int i=0;i<=size;i++){
+    for(int i=0;i<size;i++){
         int s=0;
 
+
         while(input[i][s]!=':')                                         //copy fileA to sequencd
-            s++;
+                s++;
 
         s++;
         int name_size=s;
         sequence[i].fileA=(char*)calloc(name_size+1, sizeof(char));     //+1 for '\0'
         strncpy(sequence[i].fileA, input[i], name_size);                //does not put '\0' at the end of string
-        strcpy(sequence[i].fileA, "\0");                                //adds '\0'
+        sequence[i].fileA[name_size]= '\0';                                //adds '\0'
 
 
-        s=strlen(input[i])+1;                                           //copy fileB to sequence
+        s=strlen(input[i]);                                           //copy fileB to sequence
         sequence[i].fileB=(char*)calloc(s-name_size, sizeof(char));
+
         for(int j=name_size+1;j<=s;j++)                                 //adds '\0', because it's at the end
             sequence[i].fileB[j-name_size-1]=input[i][j];
 
@@ -89,14 +91,17 @@ int create_blocks(char *fname, struct array_struct *main_array, int pair_no){
     }
 
     char *buffer = (char*)calloc(255, sizeof(char));
-    int op_c=0, size=0;
+    int op_c=0, size=1;
 
     while(fgets(buffer,255,fptr)!=NULL){                            // counts number of edition blocks
         if(buffer[0]!=60 && buffer[0]!=62 && buffer[0]!=45)         // 60=='<' 62=='>' 45=='-'
             op_c++;
         size+=strlen(buffer);
     }
+    printf("%d",op_c);
 
+
+    //main_array->array[pair_no]=(struct block_struct) calloc(1, sizeof(char**));
     main_array->array[pair_no].block = (char**) calloc (op_c, sizeof(char*));
     main_array->array[pair_no].size=op_c;
 
@@ -109,6 +114,7 @@ int create_blocks(char *fname, struct array_struct *main_array, int pair_no){
         if(buffer[0]!=60 && buffer[0]!=62 && buffer[0]!=45){
 
             if(strcmp(str,"")!=0){
+                main_array->array[pair_no].block[k] = (char*) calloc (strlen(str)+1, sizeof(char));
                 strcpy(main_array->array[pair_no].block[k],str);
                 k++;
                 str="";

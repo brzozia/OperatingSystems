@@ -9,7 +9,6 @@ struct array_struct{
     int size;
 };
 
-
 struct pair_struct{
     char *fileA;
     char *fileB;
