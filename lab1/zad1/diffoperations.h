@@ -18,9 +18,9 @@ struct array_struct *create_array(int size);             // creates array with a
 
 struct pair_struct *def_sequence(int size, char **input);
 
-void compare_pairs(int size, char **input, struct array_struct *main_array);
+void compare_pairs(int size,struct pair_struct *sequence);
 
-int create_blocks(char *fname, struct array_struct *main_array, int pair_no);               // creates block of operations from a given file and returns index of main array, which refers to created block
+int create_blocks(int fname, struct array_struct *main_array);               // creates block of operations from a given file and returns index of main array, which refers to created block
 
 int operations_counter(struct array_struct *main_array,int index);       // returns number of operations in the given block index
 

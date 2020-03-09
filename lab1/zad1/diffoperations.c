@@ -48,10 +48,8 @@ struct pair_struct *def_sequence(int size, char **input){
 
 }
 
-void compare_pairs(int size, char **input,struct array_struct *main_array){ ///czy ja ma  zwracac tu cos?
+void compare_pairs(int size, struct pair_struct *sequence){ ///czy ja ma  zwracac tu cos?
     ///trzeba sprawdzic czy rozmiar jest dobry
-
-    struct pair_struct *sequence = def_sequence(size,input);
 
     char *command=(char*) calloc(60, sizeof(char));
     int p=0;
@@ -59,28 +57,32 @@ void compare_pairs(int size, char **input,struct array_struct *main_array){ ///c
     for(int i=0;i<size;i++){
         for(int j=0;j<60;j++)
             command[j]=0;
+        char *str = (char*)calloc(size, sizeof(char));
+        sprintf(str,"%s",i);
 
         strcpy(command, "diff ");
         strcat(command, sequence[i].fileA);
         strcat(command, " ");
         strcat(command, sequence[i].fileB);
-        strcat(command, " > diffres.tmp");
+        strcat(command, " > diffres");
+        strcat(command, str);
+        strcat(command, ".tmp");
 
         system(command);
 
-        char *fname = (char*) calloc(11,sizeof(char));
-        fname="diffres.tmp";
-
-
-        while(main_array->array[p].block!=NULL)
-            p++;
-        create_blocks(fname, main_array, p);
-        p++;
-
     }
+    free(command);
 }
 
-int create_blocks(char *fname, struct array_struct *main_array, int pair_no){
+int create_blocks(int fileid, struct array_struct *main_array){
+
+    char *tostr = (char*)calloc(fileid, sizeof(char));
+        sprintf(tostr,"%s",fileid);
+
+    char *fname = (char*) calloc(11,sizeof(char));
+        fname="diffres";
+        strcat(fname, tostr);
+        strcat(fname, ".tmp");
 
     FILE *fptr = fopen(fname,"r");
 
@@ -98,6 +100,9 @@ int create_blocks(char *fname, struct array_struct *main_array, int pair_no){
         size+=strlen(buffer);
     }
 
+    int pair_no=0;
+    while(main_array->array[pair_no].block!=NULL)
+        pair_no++;
 
     main_array->array[pair_no].block = (char**) calloc (op_c, sizeof(char*));
     main_array->array[pair_no].size=op_c;
@@ -127,9 +132,11 @@ int create_blocks(char *fname, struct array_struct *main_array, int pair_no){
      main_array->array[pair_no].block[k] = (char*) calloc (strlen(str)+1, sizeof(char));
      strcpy(main_array->array[pair_no].block[k],str);               //adds last operations
 
+    fclose(fptr);
      free(str);
+     free(tostr);
      free(buffer);
-     fclose(fptr);
+     free(fname);
      return pair_no;
 
 }
