@@ -48,17 +48,15 @@ struct pair_struct *def_sequence(int size, char **input){
 
 }
 
-void compare_pairs(int size, struct pair_struct *sequence){ ///czy ja ma  zwracac tu cos?
-    ///trzeba sprawdzic czy rozmiar jest dobry
+void compare_pairs(int size, struct pair_struct *sequence){
 
     char *command=(char*) calloc(60, sizeof(char));
-    int p=0;
 
     for(int i=0;i<size;i++){
         for(int j=0;j<60;j++)
             command[j]=0;
         char *str = (char*)calloc(size, sizeof(char));
-        sprintf(str,"%s",i);
+        sprintf(str,"%d",i);
 
         strcpy(command, "diff ");
         strcat(command, sequence[i].fileA);
@@ -77,10 +75,10 @@ void compare_pairs(int size, struct pair_struct *sequence){ ///czy ja ma  zwraca
 int create_blocks(int fileid, struct array_struct *main_array){
 
     char *tostr = (char*)calloc(fileid, sizeof(char));
-        sprintf(tostr,"%s",fileid);
+        sprintf(tostr,"%d",fileid);
 
-    char *fname = (char*) calloc(11,sizeof(char));
-        fname="diffres";
+    char *fname = (char*) calloc(11+fileid,sizeof(char));
+        strcpy(fname,"diffres");
         strcat(fname, tostr);
         strcat(fname, ".tmp");
 
@@ -91,7 +89,7 @@ int create_blocks(int fileid, struct array_struct *main_array){
        exit(-1);
     }
 
-    char *buffer = (char*)calloc(255, sizeof(char));
+    char buffer[255];
     int op_c=0, size=1;
 
     while(fgets(buffer,255,fptr)!=NULL){                            // counts number of edition blocks
@@ -133,9 +131,9 @@ int create_blocks(int fileid, struct array_struct *main_array){
      strcpy(main_array->array[pair_no].block[k],str);               //adds last operations
 
     fclose(fptr);
+
      free(str);
      free(tostr);
-     free(buffer);
      free(fname);
      return pair_no;
 

@@ -32,6 +32,7 @@ int is_pair(char *arg){
 
 double interval(clock_t start, clock_t end){
     double res = (end-start)/ CLOCKS_PER_SEC;
+    return res;
 }
 
 void add_to_report(FILE * report, char *op, double real_str, double real_end, struct tms *tms_s, struct tms *tms_e){
@@ -41,15 +42,15 @@ void add_to_report(FILE * report, char *op, double real_str, double real_end, st
         double user =interval(tms_s->tms_utime,tms_e->tms_utime);
         double proc =interval(tms_s->tms_stime,tms_e->tms_stime);
 
-        fprintf(report,"operation: %s", op);
-        fprintf(report,"real time: %f",real);
-        fprintf(report, "user time: %f", user);
-        fprintf(report, "system time: %f", proc);
+        fprintf(report,"operation: %s\n", op);
+        fprintf(report,"real time: %f\n",real);
+        fprintf(report, "user time: %f\n", user);
+        fprintf(report, "system time: %f\n", proc);
 
-        printf("operation %s",op);
-        printf("real time: %f", real);
-        printf("user time: %f", user);
-        printf("system time: %f", proc);
+        printf("operation %s\n",op);
+        printf("real time: %f\n", real);
+        printf("user time: %f\n", user);
+        printf("system time: %f\n", proc);
 }
 
 
@@ -78,8 +79,7 @@ int main(int argc, char **argv){
     clock_t real_block_end;
     clock_t real_add_remove_end;
 
-    char *filename = (char *)calloc(20,sizeof(char));
-    filename="raport2.txt";
+    char *filename="raport2.txt";
     FILE *repptr = fopen(filename,"r");
 
      if( repptr == NULL ){
@@ -97,15 +97,15 @@ int main(int argc, char **argv){
         sscanf(argv[1], "%d", &size);
         main_arr = create_array(size);        //first argument is a size of main array, so regardless if later was the command"create_array" or not, the array will be created
 
-    char *op=(char*)calloc(30,sizeof(char));
+    char *op;
 
 
 
     while(id<argc){
-        strcpy(op,"");
+        real_add_remove_start=times(add_remove_start);
 
         if(!strcmp(argv[id], "compare_pairs")){
-            int pairs_size=0,fpair=id+1, p=0;
+            int pairs_size=0,fpair=id+1;
 
             while(id+1<argc && is_pair(argv[++id])==1)
                 pairs_size++;
@@ -118,6 +118,10 @@ int main(int argc, char **argv){
             compare_pairs(pairs_size,sequence);
             real_com_rem_end = times(com_rem_end);
 
+            op="compare_pairs";
+            add_to_report(repptr,op,real_com_rem_start,real_com_rem_end,com_rem_start,com_rem_end);
+
+
             for(int i=0;i<pairs_size;i++){
                 real_block_start=times(block_start);
                 create_blocks(i, main_arr);
@@ -126,7 +130,6 @@ int main(int argc, char **argv){
                 op="create and add block";
                 add_to_report(repptr, op,real_block_start,real_block_end,block_start,block_end);
             }
-            op="compare_pairs";
 
 
         }
@@ -142,6 +145,9 @@ int main(int argc, char **argv){
             real_com_rem_start = times(com_rem_start);
             remove_block(main_arr,block_index);
             real_com_rem_end = times(com_rem_end);
+
+            add_to_report(repptr,op,real_com_rem_start,real_com_rem_end,com_rem_start,com_rem_end);
+
 
         }
         else if(!strcmp(argv[id], "remove_operation")){
@@ -163,13 +169,15 @@ int main(int argc, char **argv){
 
         id++;
 
-        add_to_report(repptr,op,real_com_rem_start,real_com_rem_end,com_rem_start,com_rem_end);
 
     }
+    op="add and remove few times";
+    real_add_remove_end=times(add_remove_end);
+    add_to_report(repptr,op,real_add_remove_start,real_add_remove_end,add_remove_start,add_remove_end);
+
+
     fclose(repptr);
 
-    free(filename);
-    free(op);
     free(add_remove_end);
     free(add_remove_start);
     free(block_end);
