@@ -74,7 +74,6 @@ void compare_pairs(int size, char **input,struct array_struct *main_array){ ///c
 
         while(main_array->array[p].block!=NULL)
             p++;
-        printf("%d",p);
         create_blocks(fname, main_array, p);
         p++;
 
@@ -187,21 +186,3 @@ void remove_operation(struct array_struct *main_array,int block_index, int opera
 }
 
 
-
-
-
-
-int main(int argc, char **argv){
-    struct array_struct *main_arr = create_array(3);
-    char *ptr[]={argv[1],argv[2]};
-    compare_pairs(2,ptr,main_arr);
-    remove_block(main_arr, 0);
-    compare_pairs(2,ptr,main_arr);
-    remove_operation(main_arr,2,2);
-    printf("%d",operations_counter(main_arr,2));
-
-
-
-
-
-}
