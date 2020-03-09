@@ -30,7 +30,6 @@ struct pair_struct *def_sequence(int size, char **input){
         while(input[i][s]!=':')                                         //copy fileA to sequencd
                 s++;
 
-        s++;
         int name_size=s;
         sequence[i].fileA=(char*)calloc(name_size+1, sizeof(char));     //+1 for '\0'
         strncpy(sequence[i].fileA, input[i], name_size);                //does not put '\0' at the end of string
@@ -57,7 +56,7 @@ void compare_pairs(int size, char **input,struct array_struct *main_array){ ///c
     char *command=(char*) calloc(60, sizeof(char));
     int p=0;
 
-    for(int i=0;i<size+1;i++){
+    for(int i=0;i<size;i++){
         for(int j=0;j<60;j++)
             command[j]=0;
 
@@ -65,7 +64,7 @@ void compare_pairs(int size, char **input,struct array_struct *main_array){ ///c
         strcat(command, sequence[i].fileA);
         strcat(command, " ");
         strcat(command, sequence[i].fileB);
-        strcat(command, " >> diffres.tmp");
+        strcat(command, " > diffres.tmp");
 
         system(command);
 
@@ -75,9 +74,10 @@ void compare_pairs(int size, char **input,struct array_struct *main_array){ ///c
 
         while(main_array->array[p].block!=NULL)
             p++;
-
+        printf("%d",p);
         create_blocks(fname, main_array, p);
         p++;
+
     }
 }
 
@@ -98,16 +98,16 @@ int create_blocks(char *fname, struct array_struct *main_array, int pair_no){
             op_c++;
         size+=strlen(buffer);
     }
-    printf("%d",op_c);
 
 
-    //main_array->array[pair_no]=(struct block_struct) calloc(1, sizeof(char**));
     main_array->array[pair_no].block = (char**) calloc (op_c, sizeof(char*));
     main_array->array[pair_no].size=op_c;
 
     rewind(fptr);
     char *str=(char*)calloc(size,sizeof(char));
     int k=0;
+    strcpy(str,"");
+
 
      while(fgets(buffer,255,fptr)!=NULL){
 
@@ -117,7 +117,7 @@ int create_blocks(char *fname, struct array_struct *main_array, int pair_no){
                 main_array->array[pair_no].block[k] = (char*) calloc (strlen(str)+1, sizeof(char));
                 strcpy(main_array->array[pair_no].block[k],str);
                 k++;
-                str="";
+                strcpy(str,"");
             }
             strcpy(str,buffer);
         }
@@ -125,10 +125,11 @@ int create_blocks(char *fname, struct array_struct *main_array, int pair_no){
             strcat(str,buffer);
         }
      }
+     main_array->array[pair_no].block[k] = (char*) calloc (strlen(str)+1, sizeof(char));
      strcpy(main_array->array[pair_no].block[k],str);               //adds last operations
 
-     //free(str);
-     //free(buffer);
+     free(str);
+     free(buffer);
      fclose(fptr);
      return pair_no;
 
@@ -180,7 +181,7 @@ void remove_operation(struct array_struct *main_array,int block_index, int opera
     }
 
     free(main_array->array[block_index].block[operation_index]);
-
+    main_array->array[block_index].size--;
     main_array->array[block_index].block[operation_index]=NULL;
 
 }
@@ -191,9 +192,15 @@ void remove_operation(struct array_struct *main_array,int block_index, int opera
 
 
 int main(int argc, char **argv){
-    struct array_struct *main_arr = create_array(1);
-    char *ptr[]={argv[4]};
-    compare_pairs(1,ptr,main_arr);
+    struct array_struct *main_arr = create_array(3);
+    char *ptr[]={argv[1],argv[2]};
+    compare_pairs(2,ptr,main_arr);
+    remove_block(main_arr, 0);
+    compare_pairs(2,ptr,main_arr);
+    remove_operation(main_arr,2,2);
+    printf("%d",operations_counter(main_arr,2));
+
+
 
 
 
