@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <sys/times.h>
+#include <unistd.h>
 #include "diffoperations.h"
 
 
@@ -31,7 +32,7 @@ int is_pair(char *arg){
 }
 
 double interval(clock_t start, clock_t end){
-    double res = (end-start)/ CLOCKS_PER_SEC;
+    double res = ((double)(end-start))/ sysconf(_SC_CLK_TCK);
     return res;
 }
 
@@ -80,7 +81,7 @@ int main(int argc, char **argv){
     clock_t real_add_remove_end;
 
     char *filename="raport2.txt";
-    FILE *repptr = fopen(filename,"r");
+    FILE *repptr = fopen(filename,"w");
 
      if( repptr == NULL ){
        perror("cannot open file");

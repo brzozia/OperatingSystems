@@ -1,0 +1,64 @@
+operation: compare_pairs
+real time: 3.830000
+user time: 0.000000
+system time: 0.000000
+operation: create and add block
+real time: 20.800000
+user time: 20.400000
+system time: 0.070000
+operation: create and add block
+real time: 0.040000
+user time: 0.020000
+system time: 0.010000
+operation: create and add block
+real time: 1.960000
+user time: 1.910000
+system time: 0.030000
+operation: create and add block
+real time: 0.040000
+user time: 0.020000
+system time: 0.010000
+operation: create and add block
+real time: 0.000000
+user time: 0.000000
+system time: 0.000000
+operation: create and add block
+real time: 0.040000
+user time: 0.040000
+system time: 0.010000
+operation: create and add block
+real time: 0.040000
+user time: 0.020000
+system time: 0.010000
+operation: create and add block
+real time: 0.040000
+user time: 0.030000
+system time: 0.010000
+operation: create and add block
+real time: 23.180000
+user time: 22.710000
+system time: 0.060000
+operation: create and add block
+real time: 0.040000
+user time: 0.030000
+system time: 0.020000
+operation: create and add block
+real time: 0.040000
+user time: 0.030000
+system time: 0.000000
+operation: create and add block
+real time: 0.030000
+user time: 0.030000
+system time: 0.000000
+operation: create and add block
+real time: 0.000000
+user time: 0.000000
+system time: 0.000000
+operation: create and add block
+real time: 4.180000
+user time: 4.080000
+system time: 0.030000
+operation: add and remove few times
+real time: 54.260000
+user time: 49.320000
+system time: 0.270000
