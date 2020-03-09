@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include "diffoperations.h"
 
+#include <dlfcn.h>
+
 
 int is_pair(char *arg){
     int colon=0;
@@ -81,7 +83,18 @@ int main(int argc, char **argv){
     clock_t real_add_remove_end;
 
     char *filename="raport2.txt";
-    FILE *repptr = fopen(filename,"w");
+    FILE *repptr = fopen(filename,"a");
+
+    void *handler = dlopen("./libdiffoperations.so",RTLD_LAZY);
+
+
+    struct array_struct* (*create_array)(int size) = dlsym(handler,"create_array");
+    struct pair_struct *(*def_sequence)(int size, char **input) = dlsym(handler,"def_sequence");
+    void (*compare_pairs)(int size,struct pair_struct *sequence) = dlsym(handler,"compare_pairs");
+    int (*create_blocks)(int fname, struct array_struct *main_array) = dlsym(handler,"create_blocks");
+    int (*operations_counter)(struct array_struct *main_array,int index) = dlsym(handler,"operations_counter") ;
+    void (*remove_block)(struct array_struct *main_array,int index) = dlsym(handler,"remove_block");
+    void (*remove_operation)(struct array_struct *main_array,int block_index, int operation_index) = dlsym(handler,"remove_operation");
 
      if( repptr == NULL ){
        perror("cannot open file");
@@ -101,15 +114,19 @@ int main(int argc, char **argv){
     char *op;
 
 
-
+    real_add_remove_start=times(add_remove_start);
     while(id<argc){
-        real_add_remove_start=times(add_remove_start);
 
         if(!strcmp(argv[id], "compare_pairs")){
             int pairs_size=0,fpair=id+1;
 
             while(id+1<argc && is_pair(argv[++id])==1)
                 pairs_size++;
+            if(pairs_size>size){
+                printf("to many pairs to compare! Array size is too small!");
+                return 1;
+            }
+
             if(argc-id!=1)id--;
 
 
@@ -143,6 +160,11 @@ int main(int argc, char **argv){
             int block_index;
             sscanf(argv[++id], "%d", &block_index);
 
+            if(block_index>main_arr->size){
+                printf("wrong arguments");
+                return 1;
+            }
+
             real_com_rem_start = times(com_rem_start);
             remove_block(main_arr,block_index);
             real_com_rem_end = times(com_rem_end);
@@ -160,6 +182,15 @@ int main(int argc, char **argv){
             int operation_index;
             sscanf(argv[++id], "%d", &block_index);
             sscanf(argv[++id], "%d", &operation_index);
+
+            if(block_index>=main_arr->size){
+                printf("wrong arguments - block index");
+                return 1;
+            }
+            if(operation_index>=main_arr->array[block_index].size){
+                printf("wrong arguments - operation index - actual no of operations is %d",operations_counter(main_arr,block_index));
+                return 1;
+            }
 
             remove_operation(main_arr,block_index,operation_index);
 
@@ -186,6 +217,7 @@ int main(int argc, char **argv){
     free(com_rem_end);
     free(com_rem_start);
 
+    dlclose(handler);
 
 
 }
