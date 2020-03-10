@@ -114,7 +114,7 @@ int create_blocks(int fileid, struct array_struct *main_array){
 
      while(fgets(buffer2,size-3,fptr)!=NULL){
 
-        if(buffer2[0]!=60 && buffer2[0]!=6vi2 && buffer2[0]!=45){
+        if(buffer2[0]!=60 && buffer2[0]!=62 && buffer2[0]!=45){
 
             if(strcmp(str,"")!=0){
                 main_array->array[pair_no].block[k] = (char*) calloc (strlen(str)+1, sizeof(char));
