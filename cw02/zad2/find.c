@@ -23,7 +23,7 @@ int compare(double diff,int t){
             return 0;
     }
     else{
-        if(diff==t)
+        if(diff<=1)
             return 1;
         else
             return 0;
@@ -72,28 +72,23 @@ void find(DIR *dir,char *dest, int mt, int at, int maxd, int sa, int sm){
         strcat(curr_dir,"/");
         strcat(curr_dir,el->d_name);
         stat(curr_dir,el_stat);
-        time_t atime=(el_stat->st_atime);
-        time_t mtime=(el_stat->st_mtime);
+
+        if(sa==1 && compare(difftime(current_date,el_stat->st_atime)/(60*60*24),at)!=1)
+            continue;
+        if(sm==1 && compare(difftime(current_date,el_stat->st_mtime)/(60*60*24),mt)!=1)
+            continue;
 
 
-        if((sa!=0 && compare(difftime(atime,current_date)/(60*60*24),at)==1) && sm!=0 && compare(difftime(mtime,current_date)/(60*60*24),at)==1){
-            nice_print(curr_dir,el_stat);
-        }
-        else if((mt!=0 && compare(difftime(mtime,current_date)/(60*60*24),at)==1) || (at!=0 && compare(difftime(atime,current_date)/(60*60*24),at)==1) ){
-            nice_print(curr_dir,el_stat);
+        nice_print(curr_dir,el_stat);
 
-        }
-        else if(sa==0 && sm==0){
-            nice_print(curr_dir,el_stat);
-        }
 
-        if(S_ISDIR(el_stat->st_mode) && strcmp(el->d_name,"..")!=0 && strcmp(el->d_name,".")!=0 && (maxd>0 || maxd<=-5)){
+        if(S_ISDIR(el_stat->st_mode) && !S_ISLNK(el_stat->st_mode) && strcmp(el->d_name,"..")!=0 && strcmp(el->d_name,".")!=0 && (maxd>0 || maxd<=-5)){
                 chdir(curr_dir);
                 getcwd(curr_dir,256);
                 DIR *ndir = opendir(curr_dir);
                 find(ndir,curr_dir,mt,at,maxd-1,sa,sm);
                 closedir(ndir);
-            }
+        }
     }
 
     free(el_stat);
