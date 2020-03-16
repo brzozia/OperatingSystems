@@ -58,7 +58,7 @@ void nice_print(char *curr_dir, struct stat *el_stat){
 
 void find(char *dest, int mt, int at, int maxd, int sa, int sm){
 
-  if(maxd>=0){
+  if(maxd>=0 || maxd<=-5){
 
     DIR *dir = opendir(dest);
     if(dir==NULL){
@@ -75,7 +75,6 @@ void find(char *dest, int mt, int at, int maxd, int sa, int sm){
 
     while((el=readdir(dir))!=NULL){
         getcwd(curr_dir,256);
-        strcpy(curr_dir,dest);
         strcat(curr_dir,"/");
         strcat(curr_dir,el->d_name);
         stat(curr_dir,el_stat);
@@ -85,16 +84,18 @@ void find(char *dest, int mt, int at, int maxd, int sa, int sm){
 
         if((sa!=0 && compare(difftime(atime,current_date)/(60*60*24),at)==1) && sm!=0 && compare(difftime(mtime,current_date)/(60*60*24),at)==1){
             nice_print(curr_dir,el_stat);
-            if(S_ISDIR(el_stat->st_mode) && maxd>0){
-                find(el->d_name,mt,at,maxd-1,sa,sm);
-            }
         }
         else if((mt!=0 && compare(difftime(mtime,current_date)/(60*60*24),at)==1) || (at!=0 && compare(difftime(atime,current_date)/(60*60*24),at)==1) ){
             nice_print(curr_dir,el_stat);
-            if(S_ISDIR(el_stat->st_mode) && maxd>0 && !strcmp(el->d_name,"..") && !strcmp(el->d_name,".")){
+
+        }
+        else if(sa==0 && sm==0){
+            nice_print(curr_dir,el_stat);
+        }
+
+        if(S_ISDIR(el_stat->st_mode) && (maxd>0 || maxd<=-5) && strcmp(el->d_name,"..")!=0 && strcmp(el->d_name,".")!=0){
                 find(curr_dir,mt,at,maxd-1,sa,sm);
             }
-        }
 
     }
 
@@ -116,7 +117,7 @@ int main(int argc,char **argv){
     }
 
     char *dest = argv[1];
-    int mt=0,at=0,maxd=0;
+    int mt=0,at=0,maxd=-5;
     int sw_m=0, sw_a=0;
 
 
