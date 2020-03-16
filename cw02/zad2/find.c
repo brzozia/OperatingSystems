@@ -7,8 +7,6 @@
 #include <sys/stat.h>
 
 
-//find nazwa_katalogu [-atime arg -mtime arg -maxdepth arg]
-
 int compare(double diff,int t){
 
     if(t<0){
@@ -56,15 +54,10 @@ void nice_print(char *curr_dir, struct stat *el_stat){
 }
 
 
-void find(char *dest, int mt, int at, int maxd, int sa, int sm){
+void find(DIR *dir,char *dest, int mt, int at, int maxd, int sa, int sm){
 
   if(maxd>=0 || maxd<=-5){
 
-    DIR *dir = opendir(dest);
-    if(dir==NULL){
-        printf("Cannot open the direction");
-        return;
-    }
     char *curr_dir=(char*)calloc(256, sizeof(char));
 
     struct stat *el_stat=(struct stat*)calloc (1,sizeof(struct stat));
@@ -73,8 +66,9 @@ void find(char *dest, int mt, int at, int maxd, int sa, int sm){
     time(&current_date);
 
 
+
     while((el=readdir(dir))!=NULL){
-        getcwd(curr_dir,256);
+        strcpy(curr_dir,dest);
         strcat(curr_dir,"/");
         strcat(curr_dir,el->d_name);
         stat(curr_dir,el_stat);
@@ -93,14 +87,16 @@ void find(char *dest, int mt, int at, int maxd, int sa, int sm){
             nice_print(curr_dir,el_stat);
         }
 
-        if(S_ISDIR(el_stat->st_mode) && (maxd>0 || maxd<=-5) && strcmp(el->d_name,"..")!=0 && strcmp(el->d_name,".")!=0){
-                find(curr_dir,mt,at,maxd-1,sa,sm);
+        if(S_ISDIR(el_stat->st_mode) && strcmp(el->d_name,"..")!=0 && strcmp(el->d_name,".")!=0 && (maxd>0 || maxd<=-5)){
+                chdir(curr_dir);
+                getcwd(curr_dir,256);
+                DIR *ndir = opendir(curr_dir);
+                find(ndir,curr_dir,mt,at,maxd-1,sa,sm);
+                closedir(ndir);
             }
-
     }
 
     free(el_stat);
-    closedir(dir);
 
     }
 }
@@ -140,8 +136,19 @@ int main(int argc,char **argv){
         }
     }
 
-    find(dest,mt,at,maxd,sw_a,sw_m);
+    chdir(dest);
+    DIR *dir = opendir(dest);
 
+    if(dir==NULL){
+        printf("Cannot open the direction");
+        return 1;
+    }
+
+    getcwd(dest,256);
+
+    find(dir,dest,mt,at,maxd,sw_a,sw_m);
+
+    closedir(dir);
 
 
 }
