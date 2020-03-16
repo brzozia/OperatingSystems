@@ -59,6 +59,7 @@ void nice_print(char *curr_dir, struct stat *el_stat){
 void find(char *dest, int mt, int at, int maxd, int sa, int sm){
 
   if(maxd>=0){
+
     DIR *dir = opendir(dest);
     if(dir==NULL){
         printf("Cannot open the direction");
@@ -90,8 +91,8 @@ void find(char *dest, int mt, int at, int maxd, int sa, int sm){
         }
         else if((mt!=0 && compare(difftime(mtime,current_date)/(60*60*24),at)==1) || (at!=0 && compare(difftime(atime,current_date)/(60*60*24),at)==1) ){
             nice_print(curr_dir,el_stat);
-            if(S_ISDIR(el_stat->st_mode) && maxd>0){
-                find(el->d_name,mt,at,maxd-1,sa,sm);
+            if(S_ISDIR(el_stat->st_mode) && maxd>0 && !strcmp(el->d_name,"..") && !strcmp(el->d_name,".")){
+                find(curr_dir,mt,at,maxd-1,sa,sm);
             }
         }
 
