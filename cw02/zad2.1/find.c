@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
-#include <unistd.h>
 #include <time.h>
+#include <sys/types.h>
 #include <sys/stat.h>
-
+#include <unistd.h>
 
 int compare(double diff,int t){
 
@@ -36,6 +36,8 @@ void nice_print(char *curr_dir, struct stat *el_stat){
 
             if(S_ISREG(el_stat->st_mode))
                 printf("type: file ");
+            else if(S_ISLNK(el_stat->st_mode))
+                printf("type: slink ");
             else if(S_ISDIR(el_stat->st_mode))
                 printf("type: dir ");
             else if(S_ISCHR(el_stat->st_mode))
@@ -44,8 +46,6 @@ void nice_print(char *curr_dir, struct stat *el_stat){
                 printf("type: block dev ");
             else if(S_ISFIFO(el_stat->st_mode))
                 printf("type: fifo ");
-            else if(S_ISLNK(el_stat->st_mode))
-                printf("type: slink ");
             else if(S_ISSOCK(el_stat->st_mode))
                 printf("type: socket ");
 
@@ -71,7 +71,7 @@ void find(DIR *dir,char *dest, int mt, int at, int maxd, int sa, int sm){
         strcpy(curr_dir,dest);
         strcat(curr_dir,"/");
         strcat(curr_dir,el->d_name);
-        stat(curr_dir,el_stat);
+        lstat(curr_dir,el_stat);
 
         if(sa==1 && compare(difftime(current_date,el_stat->st_atime)/(60*60*24),at)!=1)
             continue;
@@ -80,9 +80,10 @@ void find(DIR *dir,char *dest, int mt, int at, int maxd, int sa, int sm){
 
 
         nice_print(curr_dir,el_stat);
+        if(S_ISLNK(el_stat->st_mode))
+        continue;
 
-
-        if(S_ISDIR(el_stat->st_mode) && !S_ISLNK(el_stat->st_mode) && strcmp(el->d_name,"..")!=0 && strcmp(el->d_name,".")!=0 && (maxd>0 || maxd<=-5)){
+        if(!S_ISLNK(el_stat->st_mode) && S_ISDIR(el_stat->st_mode) &&  strcmp(el->d_name,"..")!=0 && strcmp(el->d_name,".")!=0 && (maxd>0 || maxd<=-5)){
                 chdir(curr_dir);
                 getcwd(curr_dir,256);
                 DIR *ndir = opendir(curr_dir);

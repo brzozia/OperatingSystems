@@ -1,8 +1,8 @@
-all: find2
+all: find
 
-find2: find2.c
+find: find.c
 	make clean
-	gcc -Wall -g -o find2 find2.c
+	gcc -Wall -g -o find find.c
 
 clean:
 	rm -f *.o *.a *.so *.tmp main
@@ -21,7 +21,7 @@ test:
 	cd k4/k5
 	touch f6
 	ln -s k4/k5/k6 symlink1
-	./find2 . -mtime 0 -maxdepth 6
+	./find . -mtime 0 -maxdepth 6
 	rm -r k1
 	rm -r k4
 	rm symlink1
@@ -30,4 +30,6 @@ test:
 	rm f4
 	rm f6
 	rm f2.txt
+
+
 

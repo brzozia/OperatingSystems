@@ -56,7 +56,7 @@ int func(const char *name,const struct stat * el_stat, int type, struct FTW *tfw
 
     char * curr_dir=(char*)calloc(256,sizeof(char));
 
-        strcpy(curr_dir,dest);
+        getcwd(curr_dir,256);
         strcat(curr_dir,"/");
         strcat(curr_dir,name);
 

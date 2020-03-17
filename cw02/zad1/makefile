@@ -78,16 +78,16 @@ test:
 	./program copy dane1 dane2 8000 4096 sys
 	rm dane2
 	./program copy dane1 dane3 8000 4096 lib
-	./program sort dane1 5000 4096 sys
-	./program sort dane3 5000 4096 lib
+	./program sort dane1 50000 4096 sys
+	./program sort dane3 50000 4096 lib
 	rm dane1 dane3
 
 	./program generate dane1 90000 8192
 	./program copy dane1 dane2 90000 8192 sys
 	rm dane2
 	./program copy dane1 dane3 9000 8192 lib
-	./program sort dane1 9000 8192 sys
-	./program sort dane3 9000 8192 lib
+	./program sort dane1 90000 8192 sys
+	./program sort dane3 90000 8192 lib
 	rm dane1 dane3
 
 	./program generate dane1 50000 8192
