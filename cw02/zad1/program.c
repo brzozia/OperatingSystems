@@ -55,7 +55,6 @@ void swap_rec_sys(int fileptr,int record_len,int i,int j){
     char *buf1=get_record_sys(fileptr,record_len,i);
     char *buf2=get_record_sys(fileptr,record_len,j);
 
-    //printf("%s, %s\n", buf1,buf2);
     lseek(fileptr,record_len*(i),SEEK_SET);
     write(fileptr,buf2,sizeof(char)*record_len);
     lseek(fileptr,record_len*(j),SEEK_SET);
@@ -76,10 +75,8 @@ void quicksort_sys(int fileptr, int left, int right,int record_len){
                 i++;
             while(strncmp(get_record_sys(fileptr,record_len,j),key,record_len)>0 && i<j)
                 j--;
-            //printf("i %d, j %d",i,j);
             if(i<j)
                 swap_rec_sys(fileptr,record_len,i,j);
-                                //printf("www i %d, j %d\n",i,j);
 
 
         }
@@ -225,45 +222,15 @@ double interval(clock_t start, clock_t end){
     return res;
 }
 
-void write_res(FILE *fp, struct tms *start, struct tms *end, char *operation, int new_line, int bytes, int records){
+void write_res(FILE *fp, struct tms *start, struct tms *end, char *operation, int bytes, int records){
 
     double user =interval(start->tms_utime,end->tms_utime);
     double proc =interval(start->tms_stime,end->tms_stime);
 
-    if (new_line==1){
         fprintf(fp,"operacja: %s,\n rozmiar rekordu: %d, ilosc rekordow: %d\n",operation, bytes,records);
         fprintf(fp, "user time: %f \n", user);
         fprintf(fp, "system time: %f \n\n", proc);
-    }
-    else{
 
-        rewind(fp);
-
-        int l=2;
-        while(l>=0){
-
-            int c=fgetc(fp);
-            while(c!='\n'){
-                c=fgetc(fp);
-                if(c==EOF)
-                break;
-                printf("%d", c);
-            }
-            if(ftell(fp)>2)fseek(fp,-2,SEEK_CUR);
-            fprintf(fp, "                       ");
-
-            if(l==2)
-                fprintf(fp,"operacja: %s,\n rozmiar rekordu: %d, ilosc rekordow: %d\n",operation, bytes,records);
-
-            if(l==1)
-                fprintf(fp, "user time: %f\n", user);
-            if(l==0)
-                fprintf(fp, "system time: %f\n\n", proc);
-
-            l--;
-        }
-
-   }
 
 }
 
@@ -303,14 +270,14 @@ int main(int argc, char **argv){
             times(t_st);
             sort_sys(argv[2], atoi(argv[3]), atoi(argv[4]));
             times(t_end);
-            write_res(repptr,t_st,t_end, "sort system", 1,atoi(argv[4]),atoi(argv[3]));
+            write_res(repptr,t_st,t_end, "sort system", atoi(argv[4]),atoi(argv[3]));
         }
 
         else if(strcmp(argv[5],"lib")==0){
              times(t_st);
              sort_lib(argv[2], atoi(argv[3]), atoi(argv[4]));
             times(t_end);
-            write_res(repptr,t_st,t_end, "sort library",0,atoi(argv[4]),atoi(argv[3]));
+            write_res(repptr,t_st,t_end, "sort library",(argv[4]),atoi(argv[3]));
         }
 
         else{
@@ -324,13 +291,13 @@ int main(int argc, char **argv){
             times(t_st);
             copy_sys(argv[2],argv[3],atoi(argv[4]),atoi(argv[5]));
             times(t_end);
-            write_res(repptr,t_st,t_end, "copy system",1,atoi(argv[5]),atoi(argv[4]));
+            write_res(repptr,t_st,t_end, "copy system",atoi(argv[5]),atoi(argv[4]));
         }
         else if(strcmp(argv[6],"lib")==0){
             times(t_st);
             copy_lib(argv[2],argv[3],atoi(argv[4]),atoi(argv[5]));
             times(t_end);
-            write_res(repptr,t_st,t_end, "copy library",0,atoi(argv[5]),atoi(argv[4]));
+            write_res(repptr,t_st,t_end, "copy library",atoi(argv[5]),atoi(argv[4]));
         }
 
         else{

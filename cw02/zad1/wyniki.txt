@@ -1,6 +1,3 @@
-﻿Wnioski: Czas trwania funkcji systemowych jest dluzszy niż funkcji bibliotecznych. Wraz ze wzrostem rozmiary rekordu musialam zmniejszac ilosc rekordow (aby nie przepelnic pamieci maszyny wirtualnej oraz aby polecenia wykonaly się w rozsadnym czasie – nie trwalo to wieki). 
-Dla przykladu 1 i 4 bazjtow można zauwazyc ze czas uzytkownika dla funkcji systemowych w kopiowaniu nie zmienil się znaczaco, a czas systemowy wzrosl. W większosci wraz ze wzrostem rozmiaru rekordu, czas maleje.
-
 
 
 rozmiar rekordu: 1,
