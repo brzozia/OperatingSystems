@@ -75,13 +75,14 @@ void find(DIR *dir,int start,char *dest, int mt, int at, int maxd, int sa, int s
         strcat(curr_dir,el->d_name);
         lstat(curr_dir,el_stat);
 
+
         if(sa==1 && compare(difftime(current_date,el_stat->st_atime)/(60*60*24),at)!=1)
             continue;
         if(sm==1 && compare(difftime(current_date,el_stat->st_mtime)/(60*60*24),mt)!=1)
             continue;
 
 
-        //nice_print(curr_dir,el_stat);
+        nice_print(curr_dir,el_stat);
         if(S_ISLNK(el_stat->st_mode))
         continue;
 
@@ -89,13 +90,14 @@ void find(DIR *dir,int start,char *dest, int mt, int at, int maxd, int sa, int s
                 chdir(curr_dir);
                 getcwd(curr_dir,256);
                 DIR *ndir = opendir(curr_dir);
+
                 char *rel_dir=(char*)calloc(255, sizeof(char));
                 strncpy(rel_dir,curr_dir+start,255);
 
 
                  int child_pid = vfork();
                  if(child_pid==0){
-                        printf("\n\n%s PROCESSES path: %s ,PID: %d \n",el->d_name,rel_dir, (int)getpid());
+                        printf("\n\n PROCESSES path: %s ,PID: %d \n",rel_dir, (int)getpid());
                         execlp("ls","ls","-l",NULL);
                 }
                 wait(NULL);
@@ -106,11 +108,9 @@ void find(DIR *dir,int start,char *dest, int mt, int at, int maxd, int sa, int s
     }
         free(el_stat);
 
-
     }
 
 }
-
 
 
 
@@ -147,6 +147,7 @@ int main(int argc,char **argv){
     }
 
     chdir(dest);
+    getcwd(dest,256);
     DIR *dir = opendir(dest);
 
     if(dir==NULL){
@@ -154,10 +155,7 @@ int main(int argc,char **argv){
         return 1;
     }
 
-    getcwd(dest,256);
-
     find(dir,strlen(dest),dest,mt,at,maxd,sw_a,sw_m);
-
     closedir(dir);
 
 
