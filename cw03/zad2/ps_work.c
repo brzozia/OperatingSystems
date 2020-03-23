@@ -36,7 +36,6 @@ void print_matrix(int **a,int wid, int hei){
 }
 
 struct files read_files(char *line){
-    printf("wtf");
     int i=0;
     struct files file;
     file.a=(char*)calloc(20,sizeof(char));
@@ -50,15 +49,12 @@ struct files read_files(char *line){
     strncpy(file.a,line,i);
     i++;
     int n=i;
-    printf("a: %s",file.a);
     while(line[n]!=' ')n++;
     strncpy(file.b,line+i,n-i);
     n++;
     i=n;
-    printf("b %s", file.b);
     while(line[i]!='\0')i++;
     strncat(file.wy,line+n,i-n-1);
-    printf("wy: %s",file.wy);
     return file;
 }
 
@@ -161,7 +157,7 @@ int **make_matrix(FILE *a, int firstc, int lastc){
     return matrix;
 }
 
-int mltplc(FILE *a, FILE *b, FILE *wy, struct b_part bp, int w_method, int list_l){
+int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
 
     int a_col=count_col(a);
 
@@ -192,16 +188,15 @@ int mltplc(FILE *a, FILE *b, FILE *wy, struct b_part bp, int w_method, int list_
         p++;
     }
 
-
+    FILE *wyptr=fopen(wy,"r+");
     if(w_method==1){
 
-        int fd=fileno(wy);
-
-        while(flock(fd,F_LOCK)==-1){
-            printf("jlghjhbn  %d\n", (int)getpid());
+        while(flock(fileno(wyptr),F_LOCK)==-1){
+            printf("jlghjhbn");
         }
+        printf("poszlo cos  ");
             //if(bp.from == count_col(wy)-1){
-                rewind(wy);
+              /*  rewind(wy);
 
                 for(int i=0;i<a_row;i++){
                     if(fgetc(wy)!=EOF){
@@ -212,25 +207,22 @@ int mltplc(FILE *a, FILE *b, FILE *wy, struct b_part bp, int w_method, int list_
                         fprintf(wy," %d",result[i][j]);
                     fputc('\0',wy);
 
-                }
+                }*/
             //}
-        flock(fd,F_ULOCK);
+        flock(fileno(wyptr),F_ULOCK);
 
     }
     else if(w_method==2){
 
-        FILE *res=fopen("res.txt","w");
         char *filen=calloc(10,sizeof(char));
-        char *tostr = (char*)calloc(bp.from+2, sizeof(char));
-        sprintf(tostr,"%d",bp.from);
+        char *tostr = (char*)calloc(i+2, sizeof(char));
+        sprintf(tostr,"%d",i);
 
-        sprintf(filen,"%d",list_l);
-        strcpy(filen,"res_");
-        strcpy(filen,tostr);
+        strcpy(filen,wy);
+        strcat(filen,tostr);
 
         FILE *fp=fopen(filen,"w");
         strcpy(filen,";");
-        fprintf(res,"%s",filen);
 
 
         for(int i=0;i<a_row;i++){
@@ -241,7 +233,7 @@ int mltplc(FILE *a, FILE *b, FILE *wy, struct b_part bp, int w_method, int list_
         }
 
 
-        fclose(fp); fclose(res);
+        fclose(fp);fclose(wyptr);
         free(filen); free(tostr);
     }
     else{
@@ -269,74 +261,46 @@ void ps_work(char *lista,int proc,int w_method,int i){
 
 
     char *line = (char *)calloc(255,sizeof(char));
-    int o=0;
-
-    while(fgets(line,255,list)!=NULL){
-
-        struct files filee= read_files(line);                  //reads files names from line of list
-        FILE *bptr=fopen(filee.b, "r");
-
-        //FILE *aptr=fopen(filee.a, "r");
-        //FILE *bptr=fopen(filee.b, "r");
-        //FILE *wyptr=fopen(filee.wy, "r+");
 
 
-        if( bptr == NULL){
-           perror("cannot open file b (ps_work)");
-           exit(-1);
-        }
-
-        struct b_part bp = find_part(count_col(bptr), proc, i);
-        rewind(bptr);
-//if(bp.works==1)
-  //          mltp_co+=mltplc(aptr,bptr,wyptr,bp, w_method,1);
-
-
-        fprintf(mlt_tasks,"%d %s %s %d %d %d %s \n",(int)getpid(),filee.a,filee.b,bp.from,bp.to,bp.works,filee.wy);
-        printf("\n %d %s %s %d %d %d %s \n",(int)getpid(),filee.a,filee.b,bp.from,bp.to,bp.works,filee.wy);
-        fclose(bptr);
-        free(filee.a);free(filee.b);free(filee.wy);
-    }
-
-
-    int my_oper=0, done=0, my_pid=(int)getpid();
+    int my_oper=0, done=0;
     struct files filee;  struct b_part bp;
     filee.a=(char*)calloc(20,sizeof(char));
     filee.b=(char*)calloc(20,sizeof(char));
     filee.wy=(char*)calloc(20,sizeof(char));
     rewind(mlt_tasks);
 
+
     while(done>=0){
 
         while(fgets(line,255,mlt_tasks)!=NULL){
 
-            int pid;
-            sscanf(line, "%d",&pid);
-            printf("\npoczatek pobrania nowej lini pid %d,my pid %d, line: %s\n",pid,my_pid, line);
+            int fi;char p;
+            sscanf(line, "%d",&fi);
+            //printf("\npoczatek pobrania nowej lini pid %d,my pid %d, line: %s\n",fi,i, line);
 
-            if(line[0]=='-')
+            if(line[0]=='k'){
                 continue;
-
-            else if(my_oper==-1 || pid==my_pid){
-                printf("wszedl pid:%d\n",my_pid);
+            }
+            else if(my_oper==-1 || fi==i){
+                printf("wszedl pid:%d\n",i);
 
 
                 while(flock(fileno(mlt_tasks),F_LOCK)==-1);
 
                 int len=strlen(line);
                 fseek(mlt_tasks,-len,SEEK_CUR);
-                fputs("-1           ",mlt_tasks);
+                line[0]='k';
+                fputs(line,mlt_tasks);
                 fflush(mlt_tasks);
 
                 flock(fileno(mlt_tasks),F_ULOCK);
-                rewind(mlt_tasks);
 
-                sscanf(line, "%d %s %s %d %d %d %s",&pid,filee.a,filee.b,&bp.from,&bp.to,&bp.works,filee.wy );
+                sscanf(line, "%s %s %s %d %d %d %s",&p,filee.a,filee.b,&bp.from,&bp.to,&bp.works,filee.wy );
 
                 FILE *aptr=fopen(filee.a, "r");
                 FILE *bptr=fopen(filee.b, "r");
-                FILE *wyptr=fopen(filee.wy, "r+");
-                printf("\n %s %s %s \n", filee.a,filee.b,filee.wy);
+                //printf("\n %s %s %s \n", filee.a,filee.b,filee.wy);
 
                 if( bptr == NULL){
                    perror("cannot open file b (ps_work)");
@@ -346,26 +310,23 @@ void ps_work(char *lista,int proc,int w_method,int i){
                    perror("cannot open file b (ps_work)");
                    exit(-1);
                 }
-                if( wyptr == NULL){
-                   perror("cannot open file b (ps_work)");
-                   exit(-1);
-                }
+
 
                 if(bp.works==1)
-                    mltp_co+=mltplc(aptr,bptr,wyptr,bp, w_method,1);
+                    mltp_co+=mltplc(aptr,bptr,filee.wy,bp, w_method,i);
 
                 done++;
-                fclose(aptr);fclose(bptr);fclose(wyptr);
+                fclose(aptr);fclose(bptr);
 
             }
 
-            if(pid==my_pid)
+            if(fi==i)
                 my_oper++;
 
-            pid=-1;
+            while(flock(fileno(mlt_tasks),F_LOCK)==-1);
+
         }
-
-
+        rewind(mlt_tasks);
 
         if(my_oper==0)
             my_oper=-1;
@@ -380,7 +341,7 @@ void ps_work(char *lista,int proc,int w_method,int i){
 
 
 
-    free(line);free(filee.a);free(filee.b);free(filee.wy);
+    free(line);free(filee.a);free(filee.b);
     fclose(list);fclose(mlt_tasks);
     exit(mltp_co);
 

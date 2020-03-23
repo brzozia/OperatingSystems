@@ -22,6 +22,43 @@ int main(int argc, char ** argv){
     int child_pid, proc=atoi(argv[2]), PPID=(int)getpid(), w_method=atoi(argv[4]);
     struct rlimit *time=(struct rlimit*)calloc(1,sizeof(struct rlimit));
 
+
+
+    FILE *mlt_tasks=fopen("tasks.txt","r+");
+    FILE *list=fopen(argv[1], "r");
+
+    if( list == NULL || mlt_tasks==NULL){
+       perror("cannot open file");
+       exit(-1);
+    }
+
+    char *line = (char *)calloc(255,sizeof(char));
+
+    while(fgets(line,255,list)!=NULL){
+
+        struct files filee= read_files(line);                  //reads files names from line of list
+        FILE *bptr=fopen(filee.b, "r");
+
+        if( bptr == NULL){
+           perror("cannot open file b (ps_work)");
+           exit(-1);
+        }
+
+
+        for(int i=0;i<proc;i++){
+            struct b_part bp = find_part(count_col(bptr), proc, i);
+                rewind(bptr);
+            fprintf(mlt_tasks,"%d %s %s %d %d %d %s\n",i,filee.a,filee.b,bp.from,bp.to,bp.works,filee.wy);
+            printf("tutaj jestem %d %s %s %d %d %d %s\n",i,filee.a,filee.b,bp.from,bp.to,bp.works,filee.wy);
+        }
+
+        fclose(bptr);
+        free(filee.a);free(filee.b);free(filee.wy);
+    }
+    fclose(list);fclose(mlt_tasks);
+
+
+
     for(int i=0;i<proc;i++){
 
         if((int)getpid()==PPID) child_pid=(int)fork();
@@ -30,6 +67,7 @@ int main(int argc, char ** argv){
             printf("ACT PID: %d, PAR PID: %d\n",(int)getpid(),(int)getppid());
             getrlimit(RLIMIT_CPU,time);
             if(time->rlim_max<=atoi(argv[3])) time->rlim_cur=atoi(argv[3]);
+
             ps_work(argv[1],proc,w_method,i);
         }
     }
