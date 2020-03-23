@@ -10,6 +10,7 @@
 #include <sys/wait.h>
 #include <math.h>
 #include <sys/file.h>
+#include <sys/resource.h>
 
 struct files{
     char *a;
@@ -63,9 +64,7 @@ struct files read_files(char *line){
 
 struct b_part find_part(int col, int ps_no, int i){
     struct b_part bp;
-    printf("kolo\n");
     int step = round(col/ps_no);
-    printf("step: %d", step);
     if(step==0 && col != 0) step=1;
     int sum = (i+1)*step;
 
@@ -91,7 +90,7 @@ int count_col(FILE *bptr){
     fgets(line,10000,bptr);
     if(line==NULL){
         printf("File b is empty");
-        return 0;
+        exit(-1);
     }
 
     int c=1, i=0;
@@ -100,7 +99,7 @@ int count_col(FILE *bptr){
             c++;
         i++;
     }
-    rewind(bptr);
+
     return c;
 }
 
@@ -162,9 +161,15 @@ int **make_matrix(FILE *a, int firstc, int lastc){
     return matrix;
 }
 
-int mltplc(FILE *a, FILE *b, FILE *wy, struct b_part bp, int w_method ){
+int mltplc(FILE *a, FILE *b, FILE *wy, struct b_part bp, int w_method, int list_l){
 
     int a_col=count_col(a);
+
+    if(a_col != count_row(b)){
+        printf("wrong matrix ");
+        exit(-1);
+    }
+
     int a_row = count_row(a);
     int wid=bp.to-bp.from;
     int **a_matrix = make_matrix(a, 0, a_col);
@@ -189,32 +194,58 @@ int mltplc(FILE *a, FILE *b, FILE *wy, struct b_part bp, int w_method ){
 
 
     if(w_method==1){
-    printf("aaaa");
+
         int fd=fileno(wy);
-        flock(fd,LOCK_EX);
-        if(bp.from == count_col(wy)-1){
-            rewind(wy);
 
-            for(int i=0;i<a_row;i++){
-                if(fgetc(wy)!=EOF){
-                while(fgetc(wy)!= '\0' ){printf("xddd");}; //find end of line
-                }
-
-                for(int j=0;j<wid;j++)
-                    fprintf(wy," %d",result[i][j]);
-                fputc('\0',wy);
-
-            }
+        while(flock(fd,F_LOCK)==-1){
+            printf("jlghjhbn  %d\n", (int)getpid());
         }
-        flock(fd,LOCK_UN);
+            //if(bp.from == count_col(wy)-1){
+                rewind(wy);
+
+                for(int i=0;i<a_row;i++){
+                    if(fgetc(wy)!=EOF){
+                    while(fgetc(wy)!= '\0' ){printf("xddd");}; //find end of line
+                    }
+
+                    for(int j=0;j<wid;j++)
+                        fprintf(wy," %d",result[i][j]);
+                    fputc('\0',wy);
+
+                }
+            //}
+        flock(fd,F_ULOCK);
+
     }
     else if(w_method==2){
 
+        FILE *res=fopen("res.txt","w");
+        char *filen=calloc(10,sizeof(char));
+        char *tostr = (char*)calloc(bp.from+2, sizeof(char));
+        sprintf(tostr,"%d",bp.from);
+
+        sprintf(filen,"%d",list_l);
+        strcpy(filen,"res_");
+        strcpy(filen,tostr);
+
+        FILE *fp=fopen(filen,"w");
+        strcpy(filen,";");
+        fprintf(res,"%s",filen);
 
 
+        for(int i=0;i<a_row;i++){
+            for(int j=0;j<wid;j++){
+                fprintf(fp,"%d ", result[i][j]);
+            }
+            fprintf(fp,"%c",'\n');
+        }
+
+
+        fclose(fp); fclose(res);
+        free(filen); free(tostr);
     }
     else{
-        perror("wrong index of write method (choode 1 or 2");
+        perror("wrong index of write method (choose 1 or 2");
     }
 
     free(a_matrix);
@@ -225,55 +256,132 @@ int mltplc(FILE *a, FILE *b, FILE *wy, struct b_part bp, int w_method ){
 
 
 
-void ps_work(char *lista,int proc, char *time, int w_method,int i){
+void ps_work(char *lista,int proc,int w_method,int i){
 
     int  mltp_co=0;
+    FILE *mlt_tasks=fopen("tasks.txt","r+");
     FILE *list=fopen(lista, "r");
 
-    if( list == NULL ){
+    if( list == NULL || mlt_tasks==NULL){
        perror("cannot open file");
-       return;
+       exit(-1);
     }
 
 
     char *line = (char *)calloc(255,sizeof(char));
+    int o=0;
 
     while(fgets(line,255,list)!=NULL){
 
         struct files filee= read_files(line);                  //reads files names from line of list
-        FILE *aptr=fopen(filee.a, "r");
         FILE *bptr=fopen(filee.b, "r");
-        FILE *wyptr=fopen(filee.wy, "w+");
 
-        if( aptr == NULL){
-           perror("cannot open file a (ps_work)");
-           exit(-1);
-        }
+        //FILE *aptr=fopen(filee.a, "r");
+        //FILE *bptr=fopen(filee.b, "r");
+        //FILE *wyptr=fopen(filee.wy, "r+");
+
 
         if( bptr == NULL){
            perror("cannot open file b (ps_work)");
            exit(-1);
         }
 
-        if( wyptr == NULL){
-           perror("cannot open file wy (ps_work)");
-           exit(-1);
-        }
-
-
         struct b_part bp = find_part(count_col(bptr), proc, i);
         rewind(bptr);
+//if(bp.works==1)
+  //          mltp_co+=mltplc(aptr,bptr,wyptr,bp, w_method,1);
 
-        if(bp.works==1)
-            mltp_co+=mltplc(aptr,bptr,wyptr,bp, w_method);        //multiplication of matrices
 
-
-        fclose(aptr); fclose(bptr); fclose(wyptr);
+        fprintf(mlt_tasks,"%d %s %s %d %d %d %s \n",(int)getpid(),filee.a,filee.b,bp.from,bp.to,bp.works,filee.wy);
+        printf("\n %d %s %s %d %d %d %s \n",(int)getpid(),filee.a,filee.b,bp.from,bp.to,bp.works,filee.wy);
+        fclose(bptr);
         free(filee.a);free(filee.b);free(filee.wy);
     }
 
 
-    fclose(list);
+    int my_oper=0, done=0, my_pid=(int)getpid();
+    struct files filee;  struct b_part bp;
+    filee.a=(char*)calloc(20,sizeof(char));
+    filee.b=(char*)calloc(20,sizeof(char));
+    filee.wy=(char*)calloc(20,sizeof(char));
+    rewind(mlt_tasks);
+
+    while(done>=0){
+
+        while(fgets(line,255,mlt_tasks)!=NULL){
+
+            int pid;
+            sscanf(line, "%d",&pid);
+            printf("\npoczatek pobrania nowej lini pid %d,my pid %d, line: %s\n",pid,my_pid, line);
+
+            if(line[0]=='-')
+                continue;
+
+            else if(my_oper==-1 || pid==my_pid){
+                printf("wszedl pid:%d\n",my_pid);
+
+
+                while(flock(fileno(mlt_tasks),F_LOCK)==-1);
+
+                int len=strlen(line);
+                fseek(mlt_tasks,-len,SEEK_CUR);
+                fputs("-1           ",mlt_tasks);
+                fflush(mlt_tasks);
+
+                flock(fileno(mlt_tasks),F_ULOCK);
+                rewind(mlt_tasks);
+
+                sscanf(line, "%d %s %s %d %d %d %s",&pid,filee.a,filee.b,&bp.from,&bp.to,&bp.works,filee.wy );
+
+                FILE *aptr=fopen(filee.a, "r");
+                FILE *bptr=fopen(filee.b, "r");
+                FILE *wyptr=fopen(filee.wy, "r+");
+                printf("\n %s %s %s \n", filee.a,filee.b,filee.wy);
+
+                if( bptr == NULL){
+                   perror("cannot open file b (ps_work)");
+                   exit(-1);
+                }
+                if( aptr == NULL){
+                   perror("cannot open file b (ps_work)");
+                   exit(-1);
+                }
+                if( wyptr == NULL){
+                   perror("cannot open file b (ps_work)");
+                   exit(-1);
+                }
+
+                if(bp.works==1)
+                    mltp_co+=mltplc(aptr,bptr,wyptr,bp, w_method,1);
+
+                done++;
+                fclose(aptr);fclose(bptr);fclose(wyptr);
+
+            }
+
+            if(pid==my_pid)
+                my_oper++;
+
+            pid=-1;
+        }
+
+
+
+        if(my_oper==0)
+            my_oper=-1;
+        else
+            my_oper=0;
+
+        if(done==0)
+            done=-1;
+        else
+            done=0;
+    }
+
+
+
+    free(line);free(filee.a);free(filee.b);free(filee.wy);
+    fclose(list);fclose(mlt_tasks);
     exit(mltp_co);
 
 
