@@ -280,8 +280,7 @@ void ps_work(char *lista,int proc,int w_method,int i){
                 continue;
             }
             else if(my_oper==-1 || fi==i){
-
-
+                printf("fi: %d, i: %d, line: %s\n",fi,i,line);
                 while(flock(fileno(mlt_tasks),F_LOCK)==-1);
 
                 int len=strlen(line);
@@ -308,7 +307,7 @@ void ps_work(char *lista,int proc,int w_method,int i){
 
 
                 if(bp.works==1)
-                    mltp_co+=mltplc(aptr,bptr,filee.wy,bp, w_method,i);
+                    mltp_co+=mltplc(aptr,bptr,filee.wy,bp, w_method,fi);
 
                 done++;
                 fclose(aptr);fclose(bptr);
