@@ -10,6 +10,8 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <math.h>
+#include <sys/file.h>
+#include <sys/resource.h>
 #include "ps_work.c"
 
 int main(int argc, char ** argv){

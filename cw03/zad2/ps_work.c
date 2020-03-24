@@ -169,10 +169,8 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
     int a_row = count_row(a);
     int wid=bp.to-bp.from;
     int **a_matrix = make_matrix(a, 0, a_col);
-    print_matrix(a_matrix,a_col,a_row);
 
     int **b_matrix = make_matrix(b, bp.from, bp.to);rewind(b);
-    print_matrix(b_matrix,wid,count_row(b));
 
     int result[a_row][wid];
     int num=0, p=0;
@@ -196,19 +194,19 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
         }
         printf("poszlo cos  ");
             //if(bp.from == count_col(wy)-1){
-              /*  rewind(wy);
+                rewind(wyptr);
 
                 for(int i=0;i<a_row;i++){
-                    if(fgetc(wy)!=EOF){
-                    while(fgetc(wy)!= '\0' ){printf("xddd");}; //find end of line
+                    if(fgetc(wyptr)!=EOF){
+                    while(fgetc(wyptr)!= '\0' ){printf("xddd");}; //find end of line
                     }
 
                     for(int j=0;j<wid;j++)
-                        fprintf(wy," %d",result[i][j]);
-                    fputc('\0',wy);
+                        fprintf(wyptr," %d",result[i][j]);
+                    fputc('\0',wyptr);
 
-                }*/
-            //}
+
+            }
         flock(fileno(wyptr),F_ULOCK);
 
     }
@@ -277,13 +275,11 @@ void ps_work(char *lista,int proc,int w_method,int i){
 
             int fi;char p;
             sscanf(line, "%d",&fi);
-            //printf("\npoczatek pobrania nowej lini pid %d,my pid %d, line: %s\n",fi,i, line);
 
             if(line[0]=='k'){
                 continue;
             }
             else if(my_oper==-1 || fi==i){
-                printf("wszedl pid:%d\n",i);
 
 
                 while(flock(fileno(mlt_tasks),F_LOCK)==-1);
@@ -300,7 +296,6 @@ void ps_work(char *lista,int proc,int w_method,int i){
 
                 FILE *aptr=fopen(filee.a, "r");
                 FILE *bptr=fopen(filee.b, "r");
-                //printf("\n %s %s %s \n", filee.a,filee.b,filee.wy);
 
                 if( bptr == NULL){
                    perror("cannot open file b (ps_work)");
@@ -324,6 +319,7 @@ void ps_work(char *lista,int proc,int w_method,int i){
                 my_oper++;
 
             while(flock(fileno(mlt_tasks),F_LOCK)==-1);
+
 
         }
         rewind(mlt_tasks);

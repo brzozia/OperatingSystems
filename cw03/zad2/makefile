@@ -1,4 +1,4 @@
-all: macierz
+all: macierz ps_work
 
 macierz: macierz.c
 	make clean
