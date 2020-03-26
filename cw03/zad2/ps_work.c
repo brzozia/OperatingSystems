@@ -182,7 +182,10 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
 
     int **b_matrix = make_matrix(b, bp.from, bp.to);rewind(b);
 
-    int result[a_row][wid];
+    int **result=(int**)calloc(a_row,sizeof(int*));
+    for(int p=0;p<a_row;p++)
+        result[p]=(int*)calloc(wid,sizeof(int));
+    
     int num=0, p=0;
 
     while(p<wid){
@@ -205,10 +208,17 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
         
 
         for(int row=0;row<a_row;row++){
-            
-                char *line=(char*)calloc(200,sizeof(char));
+                rewind(wyptr);
+
+                char *line=(char*)calloc(8192,sizeof(char));
                 char *nline=(char*)calloc(200,sizeof(char));
                 char *tostr = (char*)calloc(100, sizeof(char));
+                
+                for(int pom=0;pom<row;pom++){
+                    while(fgetc(wyptr)!='\n');
+                    fgetc(wyptr);
+                }
+                fseek(wyptr, -2, SEEK_CUR);
                 
                 int c=1,pos=0;char z;
                 while(c<bp.from && !feof(wyptr)){
@@ -218,12 +228,6 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
                         c++;
                     printf("ajaj %c %d\n",z,pos);
                 }
-
-                //int val=result[row][j];
-                
-                //printf("res %d\n",val);
-               // if(val==0) no=1;
-            //while(val>0){ val=val/10; no++;}
 
                 fseek(wyptr, -pos, SEEK_CUR);
                 fgets(line,pos+1,wyptr);
@@ -239,19 +243,15 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
                 
 
                 fseek(wyptr,-no,SEEK_CUR);
-                fgets(line,1000,wyptr);
-                strncat(nline,line+pos+wid*2, strlen(line)-pos-wid*2-2);
-                //strcat(nline,"\n");
+                fread(line,sizeof(char),8192,wyptr);
+                strncat(nline,line+pos+wid*2, strlen(line)-pos-wid*2+2);
                 printf("nline: %s\n",nline);
                 
                 fseek(wyptr,-strlen(line),SEEK_CUR);
                 fprintf(wyptr,"%s",nline);
 
                 fflush(wyptr);
-                //while(fgetc(wyptr)!='\n' && !feof(wyptr));
                 free(nline);free(line);free(tostr);
-                printf("------------------------end loop----------");
-            
         }
         rewind(wyptr);
         flock(fileno(wyptr),F_ULOCK);
@@ -358,21 +358,7 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
 
                 if(bp.works==1)
                     mltp_co+=mltplc(aptr,bptr,filee.wy,bp, w_method,new);
-                else{
-                    
-                    if(w_method==2){
-                        char *filen=calloc(10,sizeof(char));
-                        char *tostr = (char*)calloc(new+2, sizeof(char));
-                        sprintf(tostr,"%d",new);
-
-                        strcpy(filen,filee.wy);
-                        strcat(filen,tostr);
-                        printf("filen: %s\n",filen);
-                        FILE *fp=fopen(filen,"w");
-                        fclose(fp);
-                        free(filen);free(tostr);
-                    }
-                }
+                
                 done++;
                 fclose(aptr);fclose(bptr);
 

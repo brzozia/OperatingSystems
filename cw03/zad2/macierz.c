@@ -84,16 +84,17 @@ int main(int argc, char ** argv){
     fclose(list);fclose(mlt_tasks);
 
 
-    for(int i=0;i<proc;i++){                                            //makes processes
+     //makes processes
+    for(int i=0;i<proc;i++){                                           
 
-        if((int)getpid()==PPID) child_pid=(int)fork();
+        //if((int)getpid()==PPID) child_pid=(int)fork();
 
-       if(child_pid==0 ){
+       //if(child_pid==0 ){
             getrlimit(RLIMIT_CPU,time);
             if(time->rlim_max<=atoi(argv[3])) time->rlim_cur=atoi(argv[3]);
 
             ps_work(argv[1],proc,atof(argv[3]),w_method,i);
-        }
+        //}
     }
 
     int status;
