@@ -16,10 +16,11 @@ void make_matrix(int wid, int hei, char *fname){
             sprintf(strnum,"%d ",num);
             strcat(line,strnum);
         }
-        fprintf(file,"%s\n",line);
+        line[strlen(line)-1]='\n';
+        fprintf(file,"%s",line);
         hei--;
     }
-    fprintf(file,"\n");
+    
 
     fclose(file);
     free(line);
