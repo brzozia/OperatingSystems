@@ -4,3 +4,5 @@ k a.txt b.txt 2 3 1 c.txt
 k d.txt e.txt 0 2 1 f.txt
 k d.txt e.txt 2 4 1 f.txt
 k d.txt e.txt 4 6 1 f.txt
+kb2 2 3 1 res2
+k1 res2 

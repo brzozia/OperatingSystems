@@ -35,42 +35,64 @@ int main(int argc, char ** argv){
     }
 
     char *line = (char *)calloc(255,sizeof(char));
+    char **wy_files = (char**)calloc(255,sizeof(char*));
+    int wfile=0;
 
-    while(fgets(line,255,list)!=NULL){
 
-        struct files filee= read_files(line);                  //reads files names from line of list
+    //reads files names from line of list
+    while(fgets(line,255,list)!=NULL){                          //to make list of tasks for processes to do
+
+        struct files filee= read_files(line);
+        wy_files[wfile]=(char*)calloc(20,sizeof(char));
+        strcpy(wy_files[wfile],filee.wy);
         FILE *bptr=fopen(filee.b, "r");
+        FILE *aptr=fopen(filee.a, "r");
+        FILE *wyptr=fopen(filee.wy, "w+");
 
         if( bptr == NULL){
            perror("cannot open file b (ps_work)");
            exit(-1);
         }
 
-
+        int b_col = count_col(bptr);
         for(int i=0;i<proc;i++){
-            struct b_part bp = find_part(count_col(bptr), proc, i);
+
+            struct b_part bp = find_part(b_col, proc, i);
                 rewind(bptr);
             fprintf(mlt_tasks,"%d %s %s %d %d %d %s\n",i,filee.a,filee.b,bp.from,bp.to,bp.works,filee.wy);
-            printf("tutaj jestem %d %s %s %d %d %d %s\n",i,filee.a,filee.b,bp.from,bp.to,bp.works,filee.wy);
         }
 
-        fclose(bptr);
-        free(filee.a);free(filee.b);free(filee.wy);
+        //prepare places for results in result-files
+        int a_row = count_row(aptr);
+        char *wy_line=(char*)calloc(100,sizeof(char));
+        rewind(wyptr);
+        while(b_col>0){
+            strcat(wy_line,"- ");
+            b_col--;
+        }
+        while(a_row>0){
+            fprintf(wyptr,"%s\n",wy_line);
+            a_row--;
+        }
+        system("cat f.txt");
+
+
+        fclose(bptr);fclose(aptr);fclose(wyptr);
+        free(filee.a);free(filee.b);free(filee.wy);free(wy_line);
+        wfile++;
     }
     fclose(list);fclose(mlt_tasks);
 
 
-
-    for(int i=0;i<proc;i++){
+    for(int i=0;i<proc;i++){                                            //makes processes
 
         if((int)getpid()==PPID) child_pid=(int)fork();
 
-        if(child_pid==0 ){
-            printf("ACT PID: %d, PAR PID: %d\n",(int)getpid(),(int)getppid());
+       if(child_pid==0 ){
             getrlimit(RLIMIT_CPU,time);
             if(time->rlim_max<=atoi(argv[3])) time->rlim_cur=atoi(argv[3]);
 
-            ps_work(argv[1],proc,w_method,i);
+            ps_work(argv[1],proc,atof(argv[3]),w_method,i);
         }
     }
 
@@ -80,44 +102,45 @@ int main(int argc, char ** argv){
 
 
 
-    //if(w_method==1)
-    return 0;
-/*
+    if(w_method==1)
+        return 0;
 
-    char *line = (char *)calloc(255,sizeof(char));
-    FILE *list = fopen(argv[2],"r"); rewind(list);
-    int i=0;
-    while(fgets(line,255,list)!=NULL){
+    else{
 
-        struct files f=read_files(line);
-        FILE *b=fopen(f.b,"r");
-        int col=count_col(b);
-        int step=round(col/proc); if(step==0 && col!=0) step=1; int s=0;
-        FILE *wy=fopen(f.wy,"w");
-        FILE *res=fopen("res.txt","r");
+        wfile--;
+        while(wfile>=0){
 
-        char *filen=(char*)calloc(10000,sizeof(char));
-        char *fname=(char*)calloc(20,sizeof(char));
-        fgets(filen,10000,res);
-        int p=0,s=0;
-        while(filen[p]!='\0'){
-            if(filen[p]==';'){
-                strncpy(fname,filen+s,p-s);
-                s=p;
-                int pid=fork();
-                if(pid==0)
-                    exec("paste",)
-            }
-            else
-                p++;
+            char *wy_name=(char*)calloc(20,sizeof(char));
+            char *name=(char*)calloc(100,sizeof(char));
+            char *tostr = (char*)calloc(6, sizeof(char));
 
+
+
+            wy_name=wy_files[wfile];
+            strcpy(name,"paste ");
+             //for(int i=1;i<proc+1;i++){
+                 //sprintf(tostr,"%d",i-1);
+                 strcat(name,wy_name);
+                 //strcat(name,tostr);
+                 strcat(name, "* ");
+            // }
+
+            strcat(name,"-d ");
+            strcat(name, "\" \" > ");
+            strcat(name, wy_name);
+
+                int cpid=fork();
+                if(cpid==0){
+                    execl("./pastef","pastef",name,NULL);
+                }
+                wait(NULL);
+
+            wfile--;
+            free(wy_name);free(tostr);
         }
 
-
-        fclose(wy);
-        fclose(res);
-        free(line);free(filen);
-        i++;
     }
-    */
+    return 0;
+
+
 }

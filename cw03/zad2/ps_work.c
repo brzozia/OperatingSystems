@@ -1,16 +1,21 @@
-#include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
 #include <string.h>
-#include <dirent.h>
-#include <time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <sys/wait.h>
-#include <math.h>
+#include <sys/time.h>
+#include <stdio.h>
+#include <time.h>
 #include <sys/file.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/times.h>
+#include <time.h>
+#include <unistd.h> 
+#include <fcntl.h>
+#include <features.h>
 #include <sys/resource.h>
+#include <math.h>
+
+
 
 struct files{
     char *a;
@@ -53,8 +58,12 @@ struct files read_files(char *line){
     strncpy(file.b,line+i,n-i);
     n++;
     i=n;
-    while(line[i]!='\0')i++;
+    printf("char : %c\n",line[i]);
+    while(line[i]!='\0' && line[i]!=' ')i++;
+    if(line[i]=='\0')
     strncat(file.wy,line+n,i-n-1);
+    else
+    strncat(file.wy,line+n,i-n);
     return file;
 }
 
@@ -137,6 +146,7 @@ int **make_matrix(FILE *a, int firstc, int lastc){
                 sp++;
             p++;
         }
+        
 
         int no=0, no_ctr=0;
         while(j<p){                         //copy elements
@@ -160,9 +170,9 @@ int **make_matrix(FILE *a, int firstc, int lastc){
 int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
 
     int a_col=count_col(a);
-
-    if(a_col != count_row(b)){
-        printf("wrong matrix ");
+    int b_row = count_row(b);
+    if(a_col != b_row){
+        printf("wrong matrix a_width: %d, b_height: %d \n ",a_col,b_row);
         exit(-1);
     }
 
@@ -187,28 +197,64 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
     }
 
     FILE *wyptr=fopen(wy,"r+");
+    rewind(wyptr);
+
     if(w_method==1){
 
-        while(flock(fileno(wyptr),F_LOCK)==-1){
-            printf("jlghjhbn");
+        while(flock(fileno(wyptr),F_LOCK) == -1);
+        
+
+        for(int row=0;row<a_row;row++){
+            
+                char *line=(char*)calloc(200,sizeof(char));
+                char *nline=(char*)calloc(200,sizeof(char));
+                char *tostr = (char*)calloc(100, sizeof(char));
+                
+                int c=1,pos=0;char z;
+                while(c<bp.from && !feof(wyptr)){
+                    z=fgetc(wyptr);
+                    pos++;
+                    if(z==' ')
+                        c++;
+                    printf("ajaj %c %d\n",z,pos);
+                }
+
+                //int val=result[row][j];
+                
+                //printf("res %d\n",val);
+               // if(val==0) no=1;
+            //while(val>0){ val=val/10; no++;}
+
+                fseek(wyptr, -pos, SEEK_CUR);
+                fgets(line,pos+1,wyptr);
+                printf("line: %s.end\n",line);
+                int no=strlen(line);
+                strncpy(nline,line,pos);
+                printf("nline: %s\n",nline);
+
+                for(int j=0;j<wid;j++){
+                    sprintf(tostr,"%d ",result[row][j]);
+                    strcat(nline,tostr);
+                }
+                
+
+                fseek(wyptr,-no,SEEK_CUR);
+                fgets(line,1000,wyptr);
+                strncat(nline,line+pos+wid*2, strlen(line)-pos-wid*2-2);
+                //strcat(nline,"\n");
+                printf("nline: %s\n",nline);
+                
+                fseek(wyptr,-strlen(line),SEEK_CUR);
+                fprintf(wyptr,"%s",nline);
+
+                fflush(wyptr);
+                //while(fgetc(wyptr)!='\n' && !feof(wyptr));
+                free(nline);free(line);free(tostr);
+                printf("------------------------end loop----------");
+            
         }
-        printf("poszlo cos  ");
-            //if(bp.from == count_col(wy)-1){
-                rewind(wyptr);
-
-                for(int i=0;i<a_row;i++){
-                    if(fgetc(wyptr)!=EOF){
-                    while(fgetc(wyptr)!= '\0' ){printf("xddd");}; //find end of line
-                    }
-
-                    for(int j=0;j<wid;j++)
-                        fprintf(wyptr," %d",result[i][j]);
-                    fputc('\0',wyptr);
-
-
-            }
+        rewind(wyptr);
         flock(fileno(wyptr),F_ULOCK);
-
     }
     else if(w_method==2){
 
@@ -227,6 +273,7 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
             for(int j=0;j<wid;j++){
                 fprintf(fp,"%d ", result[i][j]);
             }
+            fseek(fp,-1,SEEK_CUR);
             fprintf(fp,"%c",'\n');
         }
 
@@ -246,7 +293,12 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
 
 
 
-void ps_work(char *lista,int proc,int w_method,int i){
+
+
+void ps_work(char *lista,int proc,double tim, int w_method,int i){
+    time_t t_start;
+    time_t t_end;
+    t_start=time(NULL);
 
     int  mltp_co=0;
     FILE *mlt_tasks=fopen("tasks.txt","r+");
@@ -280,9 +332,9 @@ void ps_work(char *lista,int proc,int w_method,int i){
                 continue;
             }
             else if(my_oper==-1 || fi==i){
-                printf("fi: %d, i: %d, line: %s\n",fi,i,line);
                 while(flock(fileno(mlt_tasks),F_LOCK)==-1);
 
+                int new=fi;
                 int len=strlen(line);
                 fseek(mlt_tasks,-len,SEEK_CUR);
                 line[0]='k';
@@ -292,7 +344,6 @@ void ps_work(char *lista,int proc,int w_method,int i){
                 flock(fileno(mlt_tasks),F_ULOCK);
 
                 sscanf(line, "%s %s %s %d %d %d %s",&p,filee.a,filee.b,&bp.from,&bp.to,&bp.works,filee.wy );
-
                 FILE *aptr=fopen(filee.a, "r");
                 FILE *bptr=fopen(filee.b, "r");
 
@@ -305,12 +356,35 @@ void ps_work(char *lista,int proc,int w_method,int i){
                    exit(-1);
                 }
 
-
                 if(bp.works==1)
-                    mltp_co+=mltplc(aptr,bptr,filee.wy,bp, w_method,fi);
+                    mltp_co+=mltplc(aptr,bptr,filee.wy,bp, w_method,new);
+                else{
+                    
+                    if(w_method==2){
+                        char *filen=calloc(10,sizeof(char));
+                        char *tostr = (char*)calloc(new+2, sizeof(char));
+                        sprintf(tostr,"%d",new);
 
+                        strcpy(filen,filee.wy);
+                        strcat(filen,tostr);
+                        printf("filen: %s\n",filen);
+                        FILE *fp=fopen(filen,"w");
+                        fclose(fp);
+                        free(filen);free(tostr);
+                    }
+                }
                 done++;
                 fclose(aptr);fclose(bptr);
+
+                t_end=time(NULL);
+                if(t_end-t_start>=tim){
+                    free(line);free(filee.a);free(filee.b);
+                    fclose(list);fclose(mlt_tasks);
+                    printf("end of time\n");
+                    exit(mltp_co);
+
+                }
+                    
 
             }
 
