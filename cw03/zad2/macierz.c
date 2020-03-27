@@ -95,7 +95,7 @@ int main(int argc, char ** argv){
             if(time->rlim_max<=atoi(argv[3])) time->rlim_cur=atoi(argv[3]);
 
             ps_work(argv[1],proc,atof(argv[3]),w_method,i);
-      //  }
+       // }
     }
 
     int status;

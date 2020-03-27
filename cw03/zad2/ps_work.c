@@ -225,8 +225,7 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
                 }
 
                 fseek(wyptr, -pos, SEEK_CUR);
-                fread(line,sizeof(char),pos,wyptr);
-                int no=strlen(line);
+                int no=fread(line,sizeof(char),pos,wyptr);
                 strncpy(nline,line,pos);
 
                 for(int j=0;j<wid;j++){
@@ -234,12 +233,12 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
                     strcat(nline,tostr);
                 }
                 
-
-                fseek(wyptr,-no,SEEK_CUR);
-                fread(line,sizeof(char),8192,wyptr);
-                strncat(nline,line+pos+wid*2, strlen(line)-pos-wid*2+2);
+                strcpy(line,"");
+                fseek(wyptr,-pos,SEEK_CUR);
+                no=fread(line,sizeof(char),8192,wyptr);
+                strncat(nline,line+pos+wid*2, no-pos-wid*2+2);
                 
-                fseek(wyptr,-strlen(line),SEEK_CUR);
+                fseek(wyptr,-no,SEEK_CUR);
                 fprintf(wyptr,"%s",nline);
 
                 fflush(wyptr);
@@ -314,7 +313,7 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
     }
 
 
-    char *line = (char *)calloc(255,sizeof(char));
+    char line[300];// = (char *)calloc(255,sizeof(char));
 
 
     int my_oper=0, done=0;
@@ -333,7 +332,6 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
         while(fgets(line,255,mlt_tasks)!=NULL){
             
 
-
             int fi;char p;
             sscanf(line, "%d",&fi);
 
@@ -344,7 +342,9 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
                 while(flock(fileno(mlt_tasks),LOCK_EX)==-1);
 
                 int new=fi;
-                int len=strlen(line);
+                int len=0;
+                //while(line[len]!='\0')len++;
+                len=strlen(line);
                 fseek(mlt_tasks,-len,SEEK_CUR);
                 line[0]='k';
                 fputs(line,mlt_tasks);
@@ -380,13 +380,14 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
 
             t_end=time(NULL);
             if(t_end-t_start>=tim){
-                free(line);
+               // free(line);
                 free(filee.a);free(filee.b);
                fclose(mlt_tasks);
                 printf("end of time\n");
                 exit(mltp_co);
             }
 
+            strcpy(line,"");
              while(flock(mlt_desc,LOCK_EX)== -1);
         }
 
@@ -403,7 +404,7 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
 
 
 
-    free(line);
+    //free(line);
     free(filee.a);free(filee.b);
     fclose(mlt_tasks);
     exit(mltp_co);
