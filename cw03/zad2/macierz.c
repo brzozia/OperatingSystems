@@ -35,10 +35,9 @@ int main(int argc, char ** argv){
        exit(-1);
     }
 
-    char *line = (char *)calloc(255,sizeof(char));
+    char line[255];// = (char *)calloc(255,sizeof(char));
     char **wy_files = (char**)calloc(255,sizeof(char*));
     int wfile=0;
-
 
 
     //reads files names from line of list
@@ -89,14 +88,14 @@ int main(int argc, char ** argv){
      //makes processes
     for(int i=0;i<proc;i++){                                           
 
-        if((int)getpid()==PPID) child_pid=(int)fork();
+       // if((int)getpid()==PPID) child_pid=(int)fork();
 
-       if(child_pid==0 ){
+       //if(child_pid==0 ){
             getrlimit(RLIMIT_CPU,time);
             if(time->rlim_max<=atoi(argv[3])) time->rlim_cur=atoi(argv[3]);
 
             ps_work(argv[1],proc,atof(argv[3]),w_method,i);
-        }
+      //  }
     }
 
     int status;
@@ -104,20 +103,23 @@ int main(int argc, char ** argv){
             printf("Proces %d wykonal %d mnozen\n", (int)child_pid, WEXITSTATUS(status));
 
 
+    int wfile2=wfile;
+    if(w_method==1){
 
-    if(w_method==1)
+        for(int i=0;i<wfile ;i++)
+            free(wy_files[i]);
+        free(wy_files);
+        
         return 0;
+    }
 
     else{
 
         wfile--;
+        char *wy_name=(char*)calloc(20,sizeof(char));
+        char name[100];
+
         while(wfile>=0){
-
-            char *wy_name=(char*)calloc(20,sizeof(char));
-            char *name=(char*)calloc(100,sizeof(char));
-            char *tostr = (char*)calloc(6, sizeof(char));
-
-
 
             wy_name=wy_files[wfile];
             strcpy(name,"paste ");
@@ -139,10 +141,13 @@ int main(int argc, char ** argv){
                 wait(NULL);
 
             wfile--;
-            free(wy_name);free(tostr);
         }
 
+        for(int i=0;i<wfile2;i++)
+            free(wy_files[i]);
+        free(wy_files);
     }
+    
     return 0;
 
 

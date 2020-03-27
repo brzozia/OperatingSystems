@@ -6,8 +6,8 @@
 
 void make_matrix(int wid, int hei, char *fname){
     FILE *file = fopen(fname, "w");
-    char *line=(char*)calloc(100,sizeof(char));
-    char *strnum=(char*)calloc(4,sizeof(char));
+    char line[100];//=(char*)calloc(100,sizeof(char));
+    char strnum[4];//=(char*)calloc(4,sizeof(char));
 
     while(hei>0){
         strcpy(line,"");
@@ -23,11 +23,13 @@ void make_matrix(int wid, int hei, char *fname){
     
 
     fclose(file);
-    free(line);
+   // free(line);
 
 }
 
+
 // nazwa ilosc_par min max plik_do zapisu
+
 int main(int argc,char **argv){
     if(argc<5){
         printf("Wrong given arguments");
@@ -46,9 +48,9 @@ int main(int argc,char **argv){
         int width_b = rand()%(maxv +1 - minv) +minv;
         int height_a = rand()%(maxv +1 - minv) +minv;
         
-        char *name = (char *)calloc(20,sizeof(char));
-        char *line=(char*)calloc(100,sizeof(char));
-        char *tostr = (char*)calloc(i+1, sizeof(char));
+        char name[20];// = (char *)calloc(20,sizeof(char));
+        char line[100];//=(char*)calloc(100,sizeof(char));
+        char tostr[10];// = (char*)calloc(i+1, sizeof(char));
         sprintf(tostr,"%d",i);
         strcpy(name, "a");
         strcat(name, tostr);
@@ -74,7 +76,7 @@ int main(int argc,char **argv){
         printf("%s\n",line);
 
 
-        free(line);free(tostr);free(name);
+       // free(line);free(tostr);free(name);
     }
     fclose(flist);
 

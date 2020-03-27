@@ -90,7 +90,7 @@ struct b_part find_part(int col, int ps_no, int i){
 
 int count_col(FILE *bptr){
     rewind(bptr);
-    char *line = (char *)calloc(10000,sizeof(char));
+    char line[10000];
     fgets(line,10000,bptr);
     if(line==NULL){
         printf("File b is empty");
@@ -110,11 +110,10 @@ int count_col(FILE *bptr){
 int count_row(FILE *a){
     int hei =0;
     rewind(a);
-    char *line = (char *)calloc(10000,sizeof(char));
+    char line[10000];
 
     while(fgets(line,10000,a)!=NULL) hei++;
 
-    free(line);
     rewind(a);
     return hei;
 }
@@ -122,7 +121,7 @@ int count_row(FILE *a){
 int **make_matrix(FILE *a, int firstc, int lastc){
     int wid = lastc-firstc; // number of cells widely
     int hei =count_row(a);
-    char *line = (char *)calloc(10000,sizeof(char));
+    char line[10000];
     rewind(a);
 
     int **matrix= (int**)calloc(hei,sizeof(int*));
@@ -162,26 +161,27 @@ int **make_matrix(FILE *a, int firstc, int lastc){
         }
     }
 
-    free(line);
     return matrix;
 }
 
 int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
 
     int a_col=count_col(a);
+    int a_row = count_row(a);
     int b_row = count_row(b);
     if(a_col != b_row){
         printf("wrong matrix a_width: %d, b_height: %d \n ",a_col,b_row);
         exit(-1);
     }
 
-    int a_row = count_row(a);
+    
     int wid=bp.to-bp.from;
     int **a_matrix = make_matrix(a, 0, a_col);
 
     int **b_matrix = make_matrix(b, bp.from, bp.to);rewind(b);
 
     int **result=(int**)calloc(a_row,sizeof(int*));
+
     for(int p=0;p<a_row;p++)
         result[p]=(int*)calloc(wid,sizeof(int));
     
@@ -198,23 +198,19 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
         p++;
     }
 
-    FILE *wyptr=fopen(wy,"w+");
+    FILE *wyptr=fopen(wy,"r+");
     rewind(wyptr);
-    
+    char *line=(char*)calloc(8192,sizeof(char));
+    char *nline=(char*)calloc(200,sizeof(char));
+    char *tostr= (char*)calloc(100, sizeof(char));
 
     if(w_method==1){
 
-        while(flock(fileno(wyptr),F_LOCK) == -1);
-        //flock(fileno(wyptr),LOCK_EX);
+        while(flock(fileno(wyptr),LOCK_EX) == -1);
         
         for(int row=0;row<a_row;row++){
                 rewind(wyptr);
-                char *line=(char*)calloc(8192,sizeof(char));
-                char *nline=(char*)calloc(200,sizeof(char));
-                char *tostr = (char*)calloc(100, sizeof(char));
-                // strcpy(line,"");
-                // strcpy(nline,"");
-                // strcpy(tostr,"");
+                strcpy(line,"");strcpy(nline,"");strcpy(tostr,"");
                 
                 for(int pom=0;pom<row;pom++){
                     while(fgetc(wyptr)!='\n');
@@ -247,25 +243,22 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
                 fprintf(wyptr,"%s",nline);
 
                 fflush(wyptr);
-                free(line);
-                free(tostr);
-                free(nline);
                 
         }
         rewind(wyptr);
-        flock(fileno(wyptr),F_ULOCK);
+        flock(fileno(wyptr),LOCK_UN);
     }
     else if(w_method==2){
 
-        char *filen=calloc(10,sizeof(char));
-        char *tostr = (char*)calloc(20, sizeof(char));
+        strcpy(nline,"");strcpy(tostr,"");
+
         sprintf(tostr,"%d",i);
 
-        strcpy(filen,wy);
-        strcat(filen,tostr);
+        strcpy(nline,wy);
+        strcat(nline,tostr);
 
-        FILE *fp=fopen(filen,"w");
-        strcpy(filen,";");
+        FILE *fp=fopen(nline,"w");
+        strcpy(nline,";");
 
 
         for(int i=0;i<a_row;i++){
@@ -278,14 +271,25 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
 
 
         fclose(fp);fclose(wyptr);
-        free(filen);free(tostr);
+        
     }
     else{
         perror("wrong index of write method (choose 1 or 2");
     }
-
+    
+    for(int p=0;p<a_row;p++)
+        free(a_matrix[p]);
     free(a_matrix);
+
+    for(int p=0;p<b_row;p++)
+        free(b_matrix[p]);
     free(b_matrix);
+
+    for(int p=0;p<a_row;p++)
+        free(result[p]);
+    free(result);
+
+    free(line);free(tostr);free(nline);
     
     return 1;
 }
@@ -324,24 +328,20 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
 
     while(done>=0){
 
-        while(flock(fileno(mlt_tasks),F_LOCK)== -1);
+        while(flock(fileno(mlt_tasks),LOCK_EX)== -1);
 
         while(fgets(line,255,mlt_tasks)!=NULL){
-            //int no= fileno(mlt_tasks);
             
-            //if(fgets(line,255,mlt_tasks)==NULL) break;
 
 
             int fi;char p;
             sscanf(line, "%d",&fi);
 
             if(line[0]=='k'){
-                //flock(fileno(mlt_tasks),F_ULOCK);
                 continue;
             }
             else if(my_oper==-1 || fi==i){
-                while(flock(fileno(mlt_tasks),F_LOCK)==-1);
-                //flock(fileno(mlt_tasks),LOCK_EX);
+                while(flock(fileno(mlt_tasks),LOCK_EX)==-1);
 
                 int new=fi;
                 int len=strlen(line);
@@ -350,8 +350,7 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
                 fputs(line,mlt_tasks);
                 fflush(mlt_tasks);
 
-                //while(flock(fileno(mlt_tasks),LOCK_UN)==-1);
-                flock(fileno(mlt_tasks),F_ULOCK);
+                flock(fileno(mlt_tasks),LOCK_UN);
                 sscanf(line, "%s %s %s %d %d %d %s",&p,filee.a,filee.b,&bp.from,&bp.to,&bp.works,filee.wy );
                 
 
@@ -375,20 +374,20 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
                 }
 
             }
-            //flock(fileno(mlt_tasks),F_ULOCK);
 
             if(fi==i && bp.works==1)
                 my_oper++;
 
             t_end=time(NULL);
             if(t_end-t_start>=tim){
-                free(line);free(filee.a);free(filee.b);
+                free(line);
+                free(filee.a);free(filee.b);
                fclose(mlt_tasks);
                 printf("end of time\n");
                 exit(mltp_co);
             }
 
-             while(flock(mlt_desc,F_LOCK)== -1);
+             while(flock(mlt_desc,LOCK_EX)== -1);
         }
 
         rewind(mlt_tasks);
@@ -404,7 +403,8 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
 
 
 
-    free(line);free(filee.a);free(filee.b);
+    free(line);
+    free(filee.a);free(filee.b);
     fclose(mlt_tasks);
     exit(mltp_co);
 
