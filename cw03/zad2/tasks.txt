@@ -1,9 +1,10 @@
 k a.txt b.txt 0 1 1 c.txt
-1 a.txt b.txt 1 2 1 c.txt
-2 a.txt b.txt 2 3 1 c.txt
-k d.txt e.txt 0 2 1 f.txt
-1 d.txt e.txt 2 4 1 f.txt
-2 d.txt e.txt 4 6 1 f.txt
-k
-k a2 b2 2 2 1 res2
-k 
+k a.txt b.txt 1 2 1 c.txt
+k a.txt b.txt 2 3 1 c.txt
+k a.txt b.txt 4204303 0 0 c.txt
+k a.txt b.txt 4204303 0 0 c.txt
+k d.txt e.txt 0 1 1 f.txt
+k d.txt e.txt 1 2 1 f.txt
+k d.txt e.txt 2 3 1 f.txt
+k d.txt e.txt 3 4 1 f.txt
+k d.txt e.txt 4 6 1 f.txt

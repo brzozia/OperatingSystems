@@ -35,6 +35,10 @@ int main(int argc,char **argv){
     }
     
     int couples=atoi(argv[1]),minv=atoi(argv[2]),maxv=atoi(argv[3]);
+    if(minv>maxv || minv==0){
+        printf("Wrong given arguments - min and max values");
+        return 1;
+    }
     FILE *flist = fopen(argv[4],"w");
 
     for(int i=0;i<couples;i++){

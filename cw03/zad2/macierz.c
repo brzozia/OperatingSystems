@@ -6,12 +6,13 @@
 #include <time.h>
 #include <sys/resource.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <math.h>
 #include <sys/file.h>
 #include <sys/resource.h>
+#include <stdarg.h>
+#include <sys/stat.h>
 #include "ps_work.c"
 
 int main(int argc, char ** argv){
@@ -26,7 +27,7 @@ int main(int argc, char ** argv){
 
 
 
-    FILE *mlt_tasks=fopen("tasks.txt","r+");
+    FILE *mlt_tasks=fopen("tasks.txt","w+");
     FILE *list=fopen(argv[1], "r");
 
     if( list == NULL || mlt_tasks==NULL){
@@ -39,6 +40,7 @@ int main(int argc, char ** argv){
     int wfile=0;
 
 
+
     //reads files names from line of list
     while(fgets(line,255,list)!=NULL){                          //to make list of tasks for processes to do
 
@@ -47,7 +49,7 @@ int main(int argc, char ** argv){
         strcpy(wy_files[wfile],filee.wy);
         FILE *bptr=fopen(filee.b, "r");
         FILE *aptr=fopen(filee.a, "r");
-        FILE *wyptr=fopen(filee.wy, "w+");
+        FILE *wyptr=fopen(filee.wy, "w");
 
         if( bptr == NULL){
            perror("cannot open file b (ps_work)");
@@ -62,6 +64,7 @@ int main(int argc, char ** argv){
             fprintf(mlt_tasks,"%d %s %s %d %d %d %s\n",i,filee.a,filee.b,bp.from,bp.to,bp.works,filee.wy);
         }
 
+
         //prepare places for results in result-files
         int a_row = count_row(aptr);
         char *wy_line=(char*)calloc(100,sizeof(char));
@@ -74,8 +77,7 @@ int main(int argc, char ** argv){
             fprintf(wyptr,"%s\n",wy_line);
             a_row--;
         }
-        system("cat f.txt");
-
+        fflush(wyptr);
 
         fclose(bptr);fclose(aptr);fclose(wyptr);
         free(filee.a);free(filee.b);free(filee.wy);free(wy_line);
@@ -87,14 +89,14 @@ int main(int argc, char ** argv){
      //makes processes
     for(int i=0;i<proc;i++){                                           
 
-        //if((int)getpid()==PPID) child_pid=(int)fork();
+        if((int)getpid()==PPID) child_pid=(int)fork();
 
-       //if(child_pid==0 ){
+       if(child_pid==0 ){
             getrlimit(RLIMIT_CPU,time);
             if(time->rlim_max<=atoi(argv[3])) time->rlim_cur=atoi(argv[3]);
 
             ps_work(argv[1],proc,atof(argv[3]),w_method,i);
-        //}
+        }
     }
 
     int status;
