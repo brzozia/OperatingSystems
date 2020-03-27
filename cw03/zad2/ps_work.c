@@ -200,9 +200,9 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
 
     FILE *wyptr=fopen(wy,"r+");
     rewind(wyptr);
-    char *line=(char*)calloc(8192,sizeof(char));
-    char *nline=(char*)calloc(200,sizeof(char));
-    char *tostr= (char*)calloc(100, sizeof(char));
+    char line[8192];//=(char*)calloc(8192,sizeof(char));
+    char nline[200];//(char*)calloc(200,sizeof(char));
+    char tostr[100];//= (char*)calloc(100, sizeof(char));
 
     if(w_method==1){
 
@@ -234,7 +234,7 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
                 }
                 
                 strcpy(line,"");
-                fseek(wyptr,-pos,SEEK_CUR);
+                fseek(wyptr,-no,SEEK_CUR);
                 no=fread(line,sizeof(char),8192,wyptr);
                 strncat(nline,line+pos+wid*2, no-pos-wid*2+2);
                 
@@ -288,7 +288,7 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
         free(result[p]);
     free(result);
 
-    free(line);free(tostr);free(nline);
+   // free(line);free(tostr);free(nline);
     
     return 1;
 }
@@ -313,7 +313,7 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
     }
 
 
-    char line[300];// = (char *)calloc(255,sizeof(char));
+    char line[300];
 
 
     int my_oper=0, done=0;
@@ -336,6 +336,7 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
             sscanf(line, "%d",&fi);
 
             if(line[0]=='k'){
+                strcpy(line,"");
                 continue;
             }
             else if(my_oper==-1 || fi==i){
@@ -343,8 +344,8 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
 
                 int new=fi;
                 int len=0;
-                //while(line[len]!='\0')len++;
-                len=strlen(line);
+                while(line[len]!='\0')len++;
+                //len=strlen(line);
                 fseek(mlt_tasks,-len,SEEK_CUR);
                 line[0]='k';
                 fputs(line,mlt_tasks);
