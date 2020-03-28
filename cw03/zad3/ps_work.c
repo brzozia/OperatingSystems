@@ -424,5 +424,4 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i,double timer,do
     fclose(mlt_tasks);
     exit(mltp_co);
 
-
 }
