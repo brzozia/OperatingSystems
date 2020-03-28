@@ -63,17 +63,16 @@ void make_test(char *fname){
         for(int p=0;p<a_row;p++)
             result[p]=(int*)calloc(b_col,sizeof(int));
         
-        int num=0, p=0;
+        int num=0;
 
-        while(p<b_col){
+        for(int p=0;p<b_col;p++){
             for(int j=0;j<a_row;j++){
                 for(int i=0;i<a_col;i++){
-                    num=num + (a_matrix[j][i])*(b_matrix[i][p]);
+                    num+=(a_matrix[j][i])*(b_matrix[i][p]);
                 }
             result[j][p]=num;
             num=0;
             }
-            p++;
         }
 
         
@@ -92,6 +91,7 @@ void make_test(char *fname){
         //printf("end of matrix\n");
 
 
+
         //check results
         FILE *wy=fopen(files.wy,"r");
         if( wy==NULL){
@@ -102,7 +102,7 @@ void make_test(char *fname){
         int wy_col=count_col(wy);
         rewind(wy);
         if(wy_row !=a_row || wy_col != b_col){
-            printf("Results are different - size of matrix doesn't match. wy: %d -a:  %d,wy: %d - b: %d, %s\n",wy_row,a_row,wy_col,b_col,line);
+            printf("Results are different - size of matrix doesn't match. wy: %d a:  %d, wy: %d  b: %d, %s\n",wy_row,a_row,wy_col,b_col,line);
             return;
         }
 
@@ -125,8 +125,7 @@ void make_test(char *fname){
                         printf("numbers are not the same file:%d - tab: %d in files: %s, line: %s\n",atoi(snum),result[row][count],line,numbers);
                         return;
                     }
-                    for(int k=0;k<=i-lastpos;k++)
-                        snum[k]='\0';
+                    
                     count++;
                     lastpos=i;
                 }

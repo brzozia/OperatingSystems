@@ -301,9 +301,16 @@ int mltplc(FILE *a, FILE *b, char *wy, struct b_part bp, int w_method, int i){
 
 
 
-void ps_work(char *lista,int proc,double tim, int w_method,int i){
+void ps_work(char *lista,int proc,double tim, int w_method,int i,double timer,double memoryr){
+
     time_t t_start;
     time_t t_end;
+    struct rlimit time_limit,mem_limit;
+    time_limit.rlim_max=timer;
+    mem_limit.rlim_max=memoryr*1000000; //in bytes
+    setrlimit(RLIMIT_CPU,&time_limit);
+    setrlimit(RLIMIT_AS,&mem_limit);
+
     t_start=time(NULL);
 
     int  mltp_co=0;
@@ -318,7 +325,6 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
 
     char line[300];
 
-
     int my_oper=0, done=0;
     struct files filee;  struct b_part bp;
     filee.a=(char*)calloc(20,sizeof(char));
@@ -326,6 +332,7 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
     filee.wy=(char*)calloc(20,sizeof(char));
     rewind(mlt_tasks);
 
+    
     
 
     while(done>=0){
@@ -402,8 +409,17 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i){
             done=-1;
         else
             done=0;
-    }
 
+        t_end=time(NULL);
+            if(t_end-t_start>=tim){
+                free(filee.a);free(filee.b);
+               fclose(mlt_tasks);
+                printf("end of time\n");
+                exit(mltp_co);
+            }
+    }
+    t_end=time(NULL);
+    //printf("Process %d used %ld seconds\n",getpid(),t_end-t_start);
     free(filee.a);free(filee.b);
     fclose(mlt_tasks);
     exit(mltp_co);

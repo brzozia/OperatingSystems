@@ -17,14 +17,13 @@
 
 int main(int argc, char ** argv){
 
-    if(argc<5){
+    if(argc<7){
         printf("Wrong given arguments");
         return 1;
     }
 
     int child_pid, proc=atoi(argv[2]), PPID=(int)getpid(), w_method=atoi(argv[4]);
-    struct rlimit *time=(struct rlimit*)calloc(1,sizeof(struct rlimit));
-
+    double time = atof(argv[5]), memory=atof(argv[6]);
 
 
     FILE *mlt_tasks=fopen("tasks.txt","w+");
@@ -85,24 +84,37 @@ int main(int argc, char ** argv){
     fclose(list);fclose(mlt_tasks);
 
 
+
      //makes processes
     for(int i=0;i<proc;i++){                                           
 
         if((int)getpid()==PPID) child_pid=(int)fork();
 
        if(child_pid==0 ){
-            getrlimit(RLIMIT_CPU,time);
-            if(time->rlim_max<=atoi(argv[3])) time->rlim_cur=atoi(argv[3]);
-
-            ps_work(argv[1],proc,atof(argv[3]),w_method,i);
+            ps_work(argv[1],proc,atof(argv[3]),w_method,i,time,memory);
         }
     }
 
     int status;
-    while((child_pid=wait(&status))!=-1)
-            printf("Process %d made %d multiplications\n", (int)child_pid, WEXITSTATUS(status));
+    struct rusage usage_par, usage_child;
+    getrusage(RUSAGE_CHILDREN,&usage_par);
+    while((child_pid=wait(&status))!=-1){
+        getrusage(RUSAGE_CHILDREN,&usage_child);
+        printf("Process %d made %d multiplications\n", (int)child_pid, WEXITSTATUS(status));
+            
+        usage_child.ru_utime.tv_sec -= usage_par.ru_utime.tv_sec;
+        usage_child.ru_utime.tv_usec -=  usage_par.ru_utime.tv_usec; 
 
+        usage_child.ru_stime.tv_sec -= usage_par.ru_stime.tv_sec;
+        usage_child.ru_stime.tv_usec -=  usage_par.ru_stime.tv_usec;
 
+        printf("user CPU time used: %lf us\n", (double)usage_child.ru_utime.tv_sec*1000000+ (double)usage_child.ru_utime.tv_usec);
+        printf("system CPU time used: %lf us\n\n", (double)usage_child.ru_stime.tv_sec*1000000+ (double)usage_child.ru_stime.tv_usec);
+
+    }
+    
+    
+   
 
 
 
