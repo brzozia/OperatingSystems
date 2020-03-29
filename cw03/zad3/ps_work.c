@@ -306,7 +306,9 @@ void ps_work(char *lista,int proc,double tim, int w_method,int i,double timer,do
     time_t t_start;
     time_t t_end;
     struct rlimit time_limit,mem_limit;
+    time_limit.rlim_cur=timer;
     time_limit.rlim_max=timer;
+    mem_limit.rlim_cur=memoryr*1000000;
     mem_limit.rlim_max=memoryr*1000000; //in bytes
     setrlimit(RLIMIT_CPU,&time_limit);
     setrlimit(RLIMIT_AS,&mem_limit);
