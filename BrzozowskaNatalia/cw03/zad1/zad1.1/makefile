@@ -5,7 +5,7 @@ find: find.c
 	gcc -Wall -g -o find find.c
 
 clean:
-	rm -f *.o *.a *.so *.tmp find
+	rm -f *.o *.a *.so *.tmp
 
 test:
 	mkdir -p k1/k2

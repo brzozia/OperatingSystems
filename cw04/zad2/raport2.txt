@@ -1,0 +1,22 @@
+make[1]: Wejście do katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
+./siginherit_test ignore
+I'm in exec function
+Handler has received signal SIGUSR1
+make[1]: Opuszczenie katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
+make[1]: Wejście do katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
+./siginherit_test handler
+I'm in exec function
+Handler has received signal SIGUSR1
+Handler has received signal SIGUSR1
+make[1]: Opuszczenie katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
+make[1]: Wejście do katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
+./siginherit_test mask
+I'm in exec function
+make[1]: Opuszczenie katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
+make[1]: Wejście do katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
+./siginherit_test pending
+I'm in exec function
+SIGUSR1 is not waiting
+SIGUSR1 is not waiting
+SIGUSR1 is waiting
+make[1]: Opuszczenie katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
