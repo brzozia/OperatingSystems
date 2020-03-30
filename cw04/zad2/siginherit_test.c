@@ -40,6 +40,10 @@ int main(int argc, char **argv){
     if(strcmp(argv[1],"pending")==0)
         pending=1;
 
+    int handler=0;
+    if(strcmp(argv[1],"handler")==0)
+        handler=1;
+
     
     if(strcmp(argv[1],"ignore")==0){
 
@@ -86,20 +90,21 @@ int main(int argc, char **argv){
     int child_pid=fork();
     if(child_pid==0){
         printf("I am a child process now:\n");
-        if(!pending)
+        if(!pending){
+            if(!handler) signal(SIGUSR1, hand);
             raise(SIGUSR1);
+        }
         else
             hand_pending(SIGUSR1);
+        
+        printf("End of child process\n");
+        exit(0);
     }
-    wait(NULL);
+    wait(NULL); 
+    
 
 //second part - exec test
 
-    if(child_pid==0){
-        printf("I am a child process testing exec:\n");
-            execl("./exec_test","exec_test",argv[1],NULL);
-    }
-    wait(NULL);
-
-
+    execl("./exec_test","exec_test",argv[1],NULL);
+    
 }

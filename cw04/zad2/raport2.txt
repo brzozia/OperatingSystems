@@ -1,22 +1,47 @@
-make[1]: Wejście do katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
+Test dziedziczenia ustawien sygnalow
+
+1)Test dziedziczenia opcji 'ignore'
+
 ./siginherit_test ignore
+I am a child process now: 
+Handler has received signal SIGUSR1 ---> proces dziecko wywolany po forku() nie dziedziczy ustawienia rodzica odnosnie ignorowanych sygnalow - proces potomny obsluzyl sygnal
+End of child process
 I'm in exec function
-Handler has received signal SIGUSR1
-make[1]: Opuszczenie katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
-make[1]: Wejście do katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
+Handler has received signal SIGUSR1 ---> program wolany przez funkcje exec() nie dziedziczy po procesie macierzystym ignorowanych sygnalow
+                                        (po wywolaniu sygnalu w procesie potomnym uruchoila sie funkcja handler obslugujaca ten sygnal).
+
+
+2)Test dziedziczenia opcji 'handler'
+
 ./siginherit_test handler
-I'm in exec function
 Handler has received signal SIGUSR1
-Handler has received signal SIGUSR1
-make[1]: Opuszczenie katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
-make[1]: Wejście do katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
+I am a child process now:
+Handler has received signal SIGUSR1 ---> proces dziecko powstaly po forku() tak jak rodzic uzywa funkcji handler obslugujacej sygnal
+End of child process
+
+
+3)Test dziedziczenia opcji 'mask'
+
 ./siginherit_test mask
-I'm in exec function
-make[1]: Opuszczenie katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
-make[1]: Wejście do katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
+I am a child process now:
+End of child process ---> proces dziecko powstaly po forku() dziedziczy po rodzicu maske sygnalow zablokowanych
+I'm in exec function ---> program wywolywany przez exec() dziedziczy po rodzicu maske sygnalow zablokowanych tak jak proces potomny (po forku())
+
+
+4)Test dziedziczenia sygnalow oczekujacych/nieobsluzonych w rodzicu
+
 ./siginherit_test pending
+SIGUSR1 is not waiting
+SIGUSR1 is waiting ---> sygnal oczekuje w procesie macierzystym
+I am a child process now:
+SIGUSR1 is not waiting ---> po wykonaniu funkcji fork() proces potomny nie otrzymuje listy oczekujacych/nieobsluzonych sygnalow w rodzicu
+End of child process
 I'm in exec function
-SIGUSR1 is not waiting
-SIGUSR1 is not waiting
-SIGUSR1 is waiting
-make[1]: Opuszczenie katalogu '/home/natalia/Dokumenty/sysopy/cw04/zad2'
+SIGUSR1 is waiting ---> program wywolywany przez funkcje exec() dziedziczy liste sygnalow oczekujacych/nieobsluzonych w rodzicu
+
+WNIOSKI:
+Proces potomny powstaly po wykonaniu funkcji fork() dziedziczy sposob obslugi sygnalow(handler) oraz maske blokowanych sygnalow.
+Nie dziedziczy ignorowanych sygnalow i sygnalow nieobsluzonych w rodzicu.
+
+Program wywolywany w funkcji exec() dziedziczy maske sygnalow oraz liste nieobsluzonych sygnalow.
+Nie dziedziczy ignorowanych sygnalow.

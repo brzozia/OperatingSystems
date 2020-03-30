@@ -11,7 +11,7 @@
 #include <ctype.h>
 
 int usr1count=0;
-char *sendway;
+char sendway[20];
 
 
 
@@ -28,14 +28,14 @@ char *lower(char *s){
 void usr1_hand(int sig, siginfo_t *info, void *ucontext){
     usr1count++;
     int sendPID=info->si_pid;
+
     if(strcmp(sendway,"kill")==0){
         kill(sendPID,SIGUSR1);
     }
     else if(strcmp(sendway,"sigqueue")==0){
         union sigval val;
         val.sival_int=usr1count;
-        sigqueue(sendPID,SIGUSR2,val);
-
+        sigqueue(sendPID,SIGUSR1,val);
     }
     else if(strcmp(sendway,"sigrt")==0){
         kill(sendPID,SIGRTMIN);
@@ -55,7 +55,7 @@ void usr2_hand(int sig, siginfo_t *info, void *ucontext){
     else if(strcmp(sendway,"sigqueue")==0){
         union sigval val;
         for(int i=0;i<usr1count;i++){
-            val.sival_int=i;
+            val.sival_int=i+1;
             sigqueue(sendPID,SIGUSR1,val);
         }
         sigqueue(sendPID,SIGUSR2,val);
@@ -77,12 +77,12 @@ void usr2_hand(int sig, siginfo_t *info, void *ucontext){
 int main(int argc, char **argv){
 
     if(argc<2){
-        printf("wrong number of arguments\n");
+        printf("Wrong number of arguments\n");
         return 1;
     }
     
     printf("Catcher's PID id: %d\n", (int)getpid());
-    sendway=lower(argv[1]);
+    strcpy(sendway, lower(argv[1]));
 
 
     sigset_t unblock;
@@ -105,14 +105,14 @@ int main(int argc, char **argv){
     sigemptyset(&usr1act.sa_mask);
     sigemptyset(&usr2act.sa_mask);
     if(strcmp(sendway,"sigrt")==0){
-        sigaddset(&usr1act.sa_mask,SIGRTMIN);
-        sigaddset(&usr2act.sa_mask,SIGRTMIN+1);
+        sigaddset(&usr1act.sa_mask,SIGRTMIN+1);
+        sigaddset(&usr2act.sa_mask,SIGRTMIN);
     }
     else{
         sigaddset(&usr1act.sa_mask,SIGUSR2);
         sigaddset(&usr2act.sa_mask,SIGUSR1);
     }
-    usr1act.sa_flags=0;
+    usr1act.sa_flags=SA_SIGINFO;
     usr2act.sa_flags=SA_SIGINFO;
 
     if(strcmp(sendway,"sigrt")==0){

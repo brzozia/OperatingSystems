@@ -12,7 +12,7 @@
 
 int received=0;
 int sended;
-char *sendway;
+char sendway[20];
 int catPID;
 int signo;
 int check=1;
@@ -34,8 +34,9 @@ void usr1_hand(int sig_no){
     if(check){
         if(strcmp(sendway,"kill")==0){
             sended++;
-            if(sended==signo){
+            if(sended>signo){
                 kill(catPID,SIGUSR2);
+                sended--;
                 check=0;
             }
             else
@@ -45,8 +46,9 @@ void usr1_hand(int sig_no){
             union sigval val;
             sended++;
             val.sival_int=sended;
-            if(sended==signo){
+            if(sended>signo){
                 check=0;
+                sended--;
                 sigqueue(catPID,SIGUSR2,val);
             }
             else 
@@ -55,8 +57,9 @@ void usr1_hand(int sig_no){
         }
         else if(strcmp(sendway,"sigrt")==0){
                 sended++;
-                if(sended==signo){
+                if(sended>signo){
                     check=0;
+                    sended--;
                     kill(catPID,SIGRTMIN+1);
                 }
                 else
@@ -78,7 +81,11 @@ void usr2_hand(int sig, siginfo_t *info, void *ucontext){
 }
 
 
+
+
+
 //PID-catcher no_of_signals_to_send how_to_send
+
 int main(int argc, char **argv){
 
     if(argc<4){
@@ -86,14 +93,15 @@ int main(int argc, char **argv){
         return 1;
     }
 
+
     sended=0;
-    sendway=lower(argv[3]);
+    strcpy(sendway,lower(argv[3]));
     catPID=atoi(argv[1]);
     signo=atoi(argv[2]);
+
     if(strcmp(sendway,"kill")==0){
             sended++;
             kill(catPID,SIGUSR1);
-
     }
     else if(strcmp(sendway,"sigqueue")==0){
         union sigval val;
@@ -109,6 +117,7 @@ int main(int argc, char **argv){
         printf("Wrong third argument\n");
         return 1;
     }
+
 
 
 
@@ -133,8 +142,8 @@ int main(int argc, char **argv){
     sigemptyset(&usr1act.sa_mask);
     sigemptyset(&usr2act.sa_mask);
     if(strcmp(sendway,"sigrt")==0){
-        sigaddset(&usr1act.sa_mask,SIGRTMIN);
-        sigaddset(&usr2act.sa_mask,SIGRTMIN+1);
+        sigaddset(&usr1act.sa_mask,SIGRTMIN+1);
+        sigaddset(&usr2act.sa_mask,SIGRTMIN);
     }
     else{
         sigaddset(&usr1act.sa_mask,SIGUSR2);
@@ -153,6 +162,8 @@ int main(int argc, char **argv){
         sigaction(SIGUSR1,&usr1act,NULL);
         sigaction(SIGUSR2,&usr2act,NULL);
     }
+
+
 
     while(1);
 }
