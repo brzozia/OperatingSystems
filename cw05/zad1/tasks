@@ -1,0 +1,5 @@
+ls -l | grep main | wc 
+cat main.c | head -5 | wc -w
+ps -aux | tail -n+2 | sort -n | tail -2
+ps -aux | tail -n+2 | awk {print $6":"$2 } | sort -n | tail -1 | cut -f2 -d  
+ps -aux | tail -n+2 | awk { print $12 } | grep -c '^?$'
