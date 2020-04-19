@@ -7,12 +7,14 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <string.h>
 
-#define INIT 1
-#define CONNECT 2
+#define MSG 6
+#define INIT 5
+#define CONNECT 4
 #define LIST 3
-#define DISCONNECT 4
-#define STOP 5
+#define DISCONNECT 2
+#define STOP 1
 
 #define MSG_SIZE 256
 #define CLIENTS_NO 32
