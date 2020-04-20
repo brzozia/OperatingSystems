@@ -4,6 +4,7 @@
 struct client_info{
     key_t key;
     int status;
+    int decr;
 };
 
 key_t server_key;
@@ -15,7 +16,7 @@ int server_queue;
 
 
 void send_msg(int type, int connect_id, int sender_id, key_t key, int queue){
-    struct msgbuf msg;
+    struct msgbufget msg;
     msg.mtype = type;
     msg.mkey=key;
     msg.msender_id=sender_id;
@@ -33,14 +34,14 @@ void exit_function(){
         real_clients_no=CLIENTS_NO;
     
     int received=0;
-    struct msgbufget msgbufget;
+    struct msgbufget msgg;
 
     for(int i=0;i<real_clients_no;i++){                         // prints informations about not-stopped clients
         if(clients[i].status!=STOP){
             send_msg(STOP,-1, -1,-1,make_msg(clients[i].key,0));
-            while(get_msg(server_queue, &msgbufget, MSG_SIZE, STOP, 0)<=0);
+            while(get_msg(server_queue, &msgg, MSG_SIZE, STOP, 0)<=0);
                 
-            if(msgbufget.mconnect_id==i)
+            if(msgg.mconnect_id==i)
                 received++;
         }     
     }
@@ -70,17 +71,17 @@ int main(){
         return 1;
     }
 
-    struct msgbufget msgbufget;
-    msgbufget.mtype=-1;
+    struct msgbufget msgg;
+    msgg.mtype=-1;
 
 
 
     while(1){
-        while(get_msg(server_queue, &msgbufget, MSG_SIZE, -10, 0)<=0);
+        while(get_msg(server_queue, &msgg, MSG_SIZE, -10, 0)<=0);
 
 
         //INIT
-        if(msgbufget.mtype==INIT){
+        if(msgg.mtype==INIT){
             
             if(real_clients_no==CLIENTS_NO || full==1){                 //when list of clients is full checks stopped clients
                 full=1;
@@ -97,23 +98,25 @@ int main(){
             }
 
             struct client_info client_info;                             // adds client's data to table
-            client_info.key=msgbufget.mkey;
+            client_info.key=msgg.mkey;
+            int queue = make_msg(client_info.key,S_IRWXU);              // opens client's queue
             client_info.status=INIT;
+            client_info.decr=queue;
             clients[real_clients_no]=client_info;
 
-            int queue = make_msg(client_info.key,S_IRWXU);                      // opens client's queue
+                                  
             
             send_msg(INIT, -1, real_clients_no, -1, queue);
             
             real_clients_no++;
         }
         //LIST
-        else if(msgbufget.mtype==LIST){
+        else if(msgg.mtype==LIST){
             
             if(full==1)
                 real_clients_no=CLIENTS_NO;
 
-            int queue = make_msg(msgbufget.mkey,0);
+            int queue = clients[msgg.msender_id].decr;
 
             for(int i=0;i<real_clients_no;i++){                         // prints informations about not-stopped clients
 
@@ -125,31 +128,31 @@ int main(){
            
         }
         //CONNECT
-        else if(msgbufget.mtype==CONNECT){
-            if(clients[msgbufget.mconnect_id].status==CONNECT || clients[msgbufget.mconnect_id].status==STOP){
+        else if(msgg.mtype==CONNECT){
+            if(clients[msgg.mconnect_id].status==CONNECT || clients[msgg.mconnect_id].status==STOP){
                 printf("Server: Client which who you want to connect is not available\n");
                 break;
             }
 
-            int queue = make_msg(msgbufget.mkey, 0);                      // opens client's queue
-            send_msg(CONNECT,-1,-1,clients[msgbufget.mconnect_id].key,queue);
+            int queue = clients[msgg.msender_id].decr;                    // opens client's queue
+            send_msg(CONNECT,-1,-1,clients[msgg.mconnect_id].key,queue);
             
 
-            int queue2 = make_msg(clients[msgbufget.mconnect_id].key, 0);
-            send_msg(CONNECT,-1,-1,clients[msgbufget.msender_id].key,queue2);
+            int queue2 = clients[msgg.mconnect_id].decr;
+            send_msg(CONNECT,-1,-1,clients[msgg.msender_id].key,queue2);
             
 
-            clients[msgbufget.msender_id].status=CONNECT;
-            clients[msgbufget.mconnect_id].status=CONNECT;
+            clients[msgg.msender_id].status=CONNECT;
+            clients[msgg.mconnect_id].status=CONNECT;
 
         }
         //DISCONNECT
-        else if(msgbufget.mtype==DISCONNECT){
-            clients[msgbufget.msender_id].status=DISCONNECT;
+        else if(msgg.mtype==DISCONNECT){
+            clients[msgg.msender_id].status=DISCONNECT;
         }
         //STOP
-        else if(msgbufget.mtype==STOP){
-            clients[msgbufget.msender_id].status=STOP;
+        else if(msgg.mtype==STOP){
+            clients[msgg.msender_id].status=STOP;
         }
     }
 

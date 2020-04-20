@@ -13,7 +13,7 @@ struct chat_msg{
 };
 
 void send_msg(int type, int connect_id){
-    struct msgbuf msg;
+    struct msgbufget msg;
     msg.mtype = type;
     msg.mkey=my_key;
     msg.msender_id=my_id;
@@ -141,11 +141,11 @@ int main(){
 
     send_msg(INIT, -1);
 
-    struct msgbufget msgbufget;
+    struct msgbufget msgg;
 
     while(1){
-        if(get_msg(queue, &msgbufget, MSG_SIZE, INIT, 0)>0){
-            my_id=msgbufget.msender_id;
+        if(get_msg(queue, &msgg, MSG_SIZE, INIT, 0)>0){
+            my_id=msgg.msender_id;
             printf("my id %d\n", my_id);
             break;
         }
@@ -158,7 +158,7 @@ int main(){
         scanf("%s", input);
         int type = parse_input(input);
         
-        get_msg(queue, &msgbufget, MSG_SIZE, -10,  IPC_NOWAIT);
+        get_msg(queue, &msgg, MSG_SIZE, -10,  IPC_NOWAIT);
         
         //LIST
         if(type==LIST){
@@ -169,16 +169,16 @@ int main(){
 
             while(1){
 
-                if(get_msg(queue, &msgbufget, MSG_SIZE, LIST, 0)>0){
-                    if(msgbufget.msender_id==-1)
+                if(get_msg(queue, &msgg, MSG_SIZE, LIST, 0)>0){
+                    if(msgg.msender_id==-1)
                         break;
 
-                    if(msgbufget.mconnect_id==CONNECT)
+                    if(msgg.mconnect_id==CONNECT)
                         strcpy(status, "not available for connection");
                     else
                         strcpy(status, "available for connection");
 
-                    printf("client's id: %d, status: %s\n",msgbufget.msender_id, status);
+                    printf("client's id: %d, status: %s\n",msgg.msender_id, status);
                     
                 }
             }
@@ -192,8 +192,9 @@ int main(){
             send_msg(CONNECT, connect_id);
             
 
-            get_msg(queue, &msgbufget, MSG_SIZE, CONNECT, 0);                        // receives info from server
-            friend_queue = make_msg(msgbufget.mkey,0);
+            get_msg(queue, &msgg, MSG_SIZE, CONNECT, 0);                        // receives info from server
+            msgg.mtype=-1;
+            friend_queue = make_msg(msgg.mkey,0);
             int next_type = chat_with_friend(queue, friend_queue,0);
 
         
@@ -205,13 +206,13 @@ int main(){
             }
         }
         //STOP
-        else if(msgbufget.mtype==STOP || type==STOP){
-            printf("get stop");
+        else if(msgg.mtype==STOP || type==STOP){
+            
             exit(0);
         }
-        else if(msgbufget.mtype==CONNECT){
+        else if(msgg.mtype==CONNECT){
 
-            int next_type = chat_with_friend(queue, make_msg(msgbufget.mkey,0), 1);
+            int next_type = chat_with_friend(queue, make_msg(msgg.mkey,0), 1);
 
             if(next_type==DISCONNECT){                                              // disconnecting or stoping
                 disconnect(my_id, server_queue);

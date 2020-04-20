@@ -32,15 +32,21 @@ struct msgbufget {
   char msg[256];
 };
 
-int get_msg(int queue, struct msgbufget *msgbufget, int size, int type, int flag){
+int get_msg(int queue, struct msgbufget *msg, int size, int type, int flag){
+  
   if(flag==IPC_NOWAIT){
-    return mq_receive(queue,(char *) msgbufget, sizeof(struct msgbufget), NULL);
+    int read;
+    read=mq_receive(queue,(char *) msg, sizeof(struct msgbufget), NULL);
+      if(read==-1 && errno!=EAGAIN)
+        perror("receive 1");
+    
+    return read;
   }
   else{
     int read=0;
-    while((read=mq_receive(queue,(char *) msgbufget, sizeof(struct msgbufget), NULL))<=0){
-      if(read==-1)
-        perror("sdsdsd");
+    while((read=mq_receive(queue,(char *) msg,  sizeof(struct msgbufget), NULL))<=0){
+      if(read==-1 && errno!=EAGAIN)
+        perror("receive 2");
     }
     return read;
   }
@@ -55,9 +61,9 @@ int make_msg(key_t key, int flag){
   int newflag = 0;
   struct mq_attr attry;
   attry.mq_flags = O_NONBLOCK;
-  attry.mq_maxmsg = 8;
-  attry.mq_msgsize = MSG_SIZE;
-  attry.mq_curmsgs = 8;
+  attry.mq_maxmsg = 2;
+  attry.mq_msgsize = sizeof(struct msgbufget);
+  attry.mq_curmsgs = 1;
 
   newflag=O_CREAT | O_RDWR;
 
@@ -65,11 +71,15 @@ int make_msg(key_t key, int flag){
   if((zmienna=mq_open(name, newflag, S_IRUSR | S_IWUSR, &attry))==-1){
     perror("mq_open error");
   }
+
+  if(mq_setattr(zmienna, &attry, NULL) != 0){
+    perror("rerwere");
+  }
+
   return zmienna;
 
 }
 
- int rm_msg(int queue, int flag, struct msqid_ds *buff ){
-//   return msgctl(queue,flag, &buff );
-return 0;
+int rm_msg(int queue, int flag, struct msqid_ds *buff ){
+   return mq_close(queue);
  }
