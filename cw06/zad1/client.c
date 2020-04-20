@@ -1,6 +1,11 @@
 #include "common.h"
 #define MSG_SIZE_MSG sizeof(struct chat_msg)-8
 
+
+int my_id;
+int server_queue;
+key_t my_key 
+
 struct chat_msg{
     long mtype;
     char msg[256];
@@ -82,17 +87,49 @@ void disconnect(int my_id, int connect_id, int server_queue){
     }
 }
 
+void exit_function(){
+    printf("zamykam sie\n");
+    struct msgbuf msg;
+    msg.mtype = STOP;
+    msg.msender_id = my_id;
+
+    if( msgsnd(server_queue, &msg, MSG_SIZE, IPC_NOWAIT)==-1){
+        perror("error");
+        return;
+    }
+    struct msqid_ds buff;
+    msgctl(my_id,IPC_RMID, &buff );
+}
+
+void Chandler(int hand){
+    exit(0);
+}
 
 
+int send_msg(int type, )){
+    struct msgbuf first_msg;
+    first_msg.mtype = INIT;
+    first_msg.mkey=my_key;
+
+    if( msgsnd(server_queue, &first_msg, MSG_SIZE, IPC_NOWAIT)==-1){
+        perror("error");
+        return 1;
+    }
+}
+
+int get_msg(){
+
+}
 
 
 int main(){
 
-    int my_id;
-    key_t my_key = ftok(getenv("HOME"),(int)getpid());
+    atexit(exit_function);
+    signal(SIGINT, Chandler);
+    my_key = ftok(getenv("HOME"),(int)getpid());
     key_t server_key = ftok(getenv("HOME"), 1);
     int queue = msgget(my_key, IPC_CREAT | S_IRWXU);
-    int server_queue = msgget(server_key,S_IRWXU);
+    server_queue = msgget(server_key,S_IRWXU);
 
     if(queue==-1){
         perror("error during creating queue");
@@ -125,15 +162,14 @@ int main(){
 
 
     while(1){
-        wait(1);
         char input[15];
-        int type=-1;
-        if(msgrcv(queue, &msgbufget, MSG_SIZE, 0,  IPC_NOWAIT)==0){
+
+        msgrcv(queue, &msgbufget, MSG_SIZE, 0,  IPC_NOWAIT);
             
-            scanf("%s", input);
-            int type = parse_input(input);
-            printf("type: %d\n",type);
-        }
+        scanf("%s", input);
+        int type = parse_input(input);
+        printf("type: %d\n",type);
+        
 
         
 
@@ -196,6 +232,7 @@ int main(){
             }
         }
         else if(type==STOP){
+            exit(0);
 
         }
         else if(msgbufget.mtype==CONNECT){

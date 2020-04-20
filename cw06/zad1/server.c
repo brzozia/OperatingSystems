@@ -135,8 +135,6 @@ int main(){
         else if(msgbufget.mtype==STOP){
             clients[msgbufget.msender_id].status=STOP;
 
-
-
         }
     }
 

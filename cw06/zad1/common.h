@@ -8,7 +8,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
-#define MSG_EXCEPT 020000
+#include <signal.h>
+#include <sys/wait.h>
 
 #define MSG 6
 #define INIT 5
