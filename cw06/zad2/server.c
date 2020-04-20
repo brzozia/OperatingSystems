@@ -21,10 +21,11 @@ void send_msg(int type, int connect_id, int sender_id, key_t key, int queue){
     msg.msender_id=sender_id;
     msg.mconnect_id=connect_id;
 
-    if( msgsnd(queue, &msg, MSG_SIZE, IPC_NOWAIT)==-1){
+    if( mq_send(queue, &msg, MSG_SIZE, 2)==-1){
         perror("error");
         return;
     }
+   
 }
 
 void exit_function(){
@@ -101,7 +102,7 @@ int main(){
             client_info.status=INIT;
             clients[real_clients_no]=client_info;
 
-            int queue = make_msg(client_info.key,S_IRWXU);                      // opens client's queue
+            int queue = make_msg(client_info.key,0);                      // opens client's queue
             
             send_msg(INIT, -1, real_clients_no, -1, queue);
             

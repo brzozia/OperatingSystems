@@ -1,5 +1,5 @@
 #include "common.h"
-#define MSG_SIZE_MSG sizeof(struct chat_msg)-8
+#define MSG_SIZE_MSG sizeof(struct chat_msg)
 #define INPUT_SIZE 256
 
 int my_id=-1;
@@ -19,18 +19,19 @@ void send_msg(int type, int connect_id){
     msg.msender_id=my_id;
     msg.mconnect_id=connect_id;
 
-    if( msgsnd(server_queue, &msg, MSG_SIZE, IPC_NOWAIT)==-1){
+    if( mq_send(server_queue, &msg, MSG_SIZE, 2)==-1){
         perror("error");
         exit(0) ;
     }
 }
 
 
+
 void send_chat(char *input, int queue){
     struct chat_msg sended;
     sended.mtype=MSG;
     strcpy(sended.msg,input);
-    if( msgsnd(queue, &sended, MSG_SIZE_MSG, IPC_NOWAIT)==-1){
+    if( mq_send(queue, &sended, MSG_SIZE_MSG, 2)==-1){
         perror("error - send chat");
         exit(0) ;
     }
@@ -132,7 +133,7 @@ int main(){
     my_key = ftok(getenv("HOME"),(int)getpid());
     key_t server_key = ftok(getenv("HOME"), 1);
     int queue = msgget(my_key, IPC_CREAT | S_IRWXU);
-    server_queue = make_msg(server_key,S_IRWXU);
+    server_queue = make_msg(server_key,0);
 
     if(queue==-1){
         perror("error during creating queue");
