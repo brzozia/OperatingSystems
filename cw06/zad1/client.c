@@ -51,7 +51,7 @@ int parse_input(char *input){
 }
 
 void ChatChandler(int hand){
-    send_chat("STOP",friend_queue);
+    send_chat("DISCONNECT",friend_queue);
     exit(0);
 }
 
@@ -59,13 +59,13 @@ int chat_with_friend(int my_queue, int friend_queue, int who){
     signal(SIGINT, ChatChandler);
     printf("now you can chat with other client\n");
 
-    char input[256];
+    char input[INPUT_SIZE];
     int type;
     struct chat_msg received;
     
     if(who==0){
         printf("enter message to client or DISCONNECT\n");
-        // fgets(input, INPUT_SIZE, stdin);
+        //  getline(&input, )
         scanf("%s",input);
 
         if((type=parse_input(input))!=MSG){
@@ -75,17 +75,17 @@ int chat_with_friend(int my_queue, int friend_queue, int who){
     }
     
     while(1){
-        if(msgrcv(my_queue, &received, MSG_SIZE_MSG, MSG, IPC_NOWAIT)>0){
+        if(get_msg(my_queue, &received, MSG_SIZE_MSG, MSG, IPC_NOWAIT)>0){
             printf("received: %s\n",received.msg);
 
             if(strcmp(received.msg,"DISCONNECT")==0)
                 return DISCONNECT;
             if(strcmp(received.msg,"STOP")==0)
-                return STOP;
+                return DISCONNECT;
             
             printf("enter message to client or DISCONNECT\n");
-            // fgets(input, INPUT_SIZE, stdin);
-            scanf("%s",input);
+            //  fgets(input, INPUT_SIZE, stdin);
+             scanf("%s",input);
 
             send_chat(input,friend_queue);
 
@@ -104,16 +104,13 @@ void disconnect(int my_id, int server_queue){
     send_msg(DISCONNECT, -1);
 }
 
+
+
 void exit_function(){
     printf("zamykam sie\n");
-    struct msgbuf msg;
-    msg.mtype = STOP;
-    msg.msender_id = my_id;
 
-    if( msgsnd(server_queue, &msg, MSG_SIZE, IPC_NOWAIT)==-1){
-        perror("error in exit");
-        exit(0);
-    }
+    send_msg(STOP, -1);
+    
     struct msqid_ds buff;
     msgctl(my_id,IPC_RMID, &buff );
 }
@@ -125,9 +122,7 @@ void Chandler(int hand){
 
 
 
-// int get_msg(){
 
-// }
 
 
 int main(){
@@ -137,7 +132,7 @@ int main(){
     my_key = ftok(getenv("HOME"),(int)getpid());
     key_t server_key = ftok(getenv("HOME"), 1);
     int queue = msgget(my_key, IPC_CREAT | S_IRWXU);
-    server_queue = msgget(server_key,S_IRWXU);
+    server_queue = make_msg(server_key,S_IRWXU);
 
     if(queue==-1){
         perror("error during creating queue");
@@ -149,7 +144,7 @@ int main(){
     struct msgbufget msgbufget;
 
     while(1){
-        if(msgrcv(queue, &msgbufget, MSG_SIZE, INIT, 0)>0){
+        if(get_msg(queue, &msgbufget, MSG_SIZE, INIT, 0)>0){
             my_id=msgbufget.msender_id;
             printf("my id %d\n", my_id);
             break;
@@ -163,7 +158,7 @@ int main(){
         scanf("%s", input);
         int type = parse_input(input);
         
-        msgrcv(queue, &msgbufget, MSG_SIZE, -10,  IPC_NOWAIT);
+        get_msg(queue, &msgbufget, MSG_SIZE, -10,  IPC_NOWAIT);
         
         //LIST
         if(type==LIST){
@@ -174,7 +169,7 @@ int main(){
 
             while(1){
 
-                if(msgrcv(queue, &msgbufget, MSG_SIZE, LIST, 0)>0){
+                if(get_msg(queue, &msgbufget, MSG_SIZE, LIST, 0)>0){
                     if(msgbufget.msender_id==-1)
                         break;
 
@@ -197,8 +192,8 @@ int main(){
             send_msg(CONNECT, connect_id);
             
 
-            msgrcv(queue, &msgbufget, MSG_SIZE, CONNECT, 0);                        // receives info from server
-            friend_queue = msgget(msgbufget.mkey,0);
+            get_msg(queue, &msgbufget, MSG_SIZE, CONNECT, 0);                        // receives info from server
+            friend_queue = make_msg(msgbufget.mkey,0);
             int next_type = chat_with_friend(queue, friend_queue,0);
 
         
@@ -209,13 +204,14 @@ int main(){
                 exit(0);
             }
         }
+        //STOP
         else if(msgbufget.mtype==STOP || type==STOP){
+            print("get stop");
             exit(0);
-
         }
         else if(msgbufget.mtype==CONNECT){
 
-            int next_type = chat_with_friend(queue, msgget(msgbufget.mkey,0), 1);
+            int next_type = chat_with_friend(queue, make_msg(msgbufget.mkey,0), 1);
 
             if(next_type==DISCONNECT){                                              // disconnecting or stoping
                 disconnect(my_id, server_queue);

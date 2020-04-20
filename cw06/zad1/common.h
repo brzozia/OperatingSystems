@@ -36,3 +36,10 @@ struct msgbufget {
   int mconnect_id;
 };
 
+int get_msg(int queue, struct msgbufget *msgbufget, int size, int type, int flag){
+    return msgrcv(queue, &msgbufget, size, type, flag);
+}
+
+int make_msg(key_t key, int flag){
+    return msgget(key,flag);
+}

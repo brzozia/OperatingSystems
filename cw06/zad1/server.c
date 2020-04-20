@@ -1,15 +1,18 @@
 #include "common.h"
 
+
+struct client_info{
+    key_t key;
+    int status;
+};
+
 key_t server_key;
 int real_clients_no=0;
 int full=0;
 struct client_info clients[CLIENTS_NO];
 int server_queue;
 
-struct client_info{
-    key_t key;
-    int status;
-};
+
 
 void send_msg(int type, int connect_id, int sender_id, key_t key, int queue){
     struct msgbuf msg;
@@ -34,17 +37,19 @@ void exit_function(){
 
     for(int i=0;i<real_clients_no;i++){                         // prints informations about not-stopped clients
         if(clients[i].status!=STOP){
-            send_msg(STOP,clients[i].status, i,-1,msgget(clients[i].key,0));
-        }   
-        while(msgrcv(server_queue, &msgbufget, MSG_SIZE, STOP, 0)<=0);
-        if(msgbufget.mconnect_id==i)
-            received++;
+            send_msg(STOP,-1, -1,-1,make_msg(clients[i].key,0));
+            while(get_msg(server_queue, &msgbufget, MSG_SIZE, STOP, 0)<=0);
+                
+            if(msgbufget.mconnect_id==i)
+                received++;
+        }     
     }
 
-    if(received==real_clients_no){
-        struct msqid_ds buff;
-        msgctl(server_queue,IPC_RMID, &buff );
+    struct msqid_ds buff;
+    if(msgctl(server_queue,IPC_RMID, &buff )){
+        perror("remove queue");
     }
+    
 }
 
 
@@ -58,7 +63,7 @@ int main(){
     signal(SIGINT, Chandler);    
     real_clients_no=0;
     server_key = ftok(getenv("HOME"), 1);
-    server_queue = msgget(server_key, IPC_CREAT | S_IRWXU );
+    server_queue = make_msg(server_key, IPC_CREAT | S_IRWXU );
 
     if(server_queue==-1){
         perror("error during during creating queue");
@@ -71,7 +76,7 @@ int main(){
 
 
     while(1){
-        while(msgrcv(server_queue, &msgbufget, MSG_SIZE, -10, 0)<=0);
+        while(get_msg(server_queue, &msgbufget, MSG_SIZE, -10, 0)<=0);
 
 
         //INIT
@@ -96,7 +101,7 @@ int main(){
             client_info.status=INIT;
             clients[real_clients_no]=client_info;
 
-            int queue = msgget(client_info.key,S_IRWXU);                      // opens client's queue
+            int queue = make_msg(client_info.key,S_IRWXU);                      // opens client's queue
             
             send_msg(INIT, -1, real_clients_no, -1, queue);
             
@@ -108,7 +113,7 @@ int main(){
             if(full==1)
                 real_clients_no=CLIENTS_NO;
 
-            int queue = msgget(msgbufget.mkey,0);
+            int queue = make_msg(msgbufget.mkey,0);
 
             for(int i=0;i<real_clients_no;i++){                         // prints informations about not-stopped clients
 
@@ -126,11 +131,11 @@ int main(){
                 break;
             }
 
-            int queue = msgget(msgbufget.mkey, 0);                      // opens client's queue
+            int queue = make_msg(msgbufget.mkey, 0);                      // opens client's queue
             send_msg(CONNECT,-1,-1,clients[msgbufget.mconnect_id].key,queue);
             
 
-            int queue2 = msgget(clients[msgbufget.mconnect_id].key, 0);
+            int queue2 = make_msg(clients[msgbufget.mconnect_id].key, 0);
             send_msg(CONNECT,-1,-1,clients[msgbufget.msender_id].key,queue2);
             
 
