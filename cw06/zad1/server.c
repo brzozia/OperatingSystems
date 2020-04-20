@@ -6,13 +6,17 @@ struct client_info{
     int status;
 };
 
+
+
 int main(){
 
     struct client_info clients[CLIENTS_NO];
     int full=0;
     int real_clients_no=0;
-    key_t server_key = ftok(getenv("HOME"), 's');
+    key_t server_key = ftok(getenv("HOME"), 1);
     int server_queue = msgget(server_key, IPC_CREAT | S_IRWXU );
+    
+
 
     if(server_queue==-1){
         perror("error during during creating queue");
@@ -20,13 +24,19 @@ int main(){
     }
 
     struct msgbufget msgbufget;
+    struct msgbuf msg; 
+    msgbufget.mtype=-1;
+
+
 
     while(1){
-        msgrcv(server_queue, &msgbufget, MSG_SIZE, -6, 0);
+        while(msgrcv(server_queue, &msgbufget, MSG_SIZE, 0, 0)<=0);
+
+        //printf("server lol %ld",msgbufget.mtype);
 
         //INIT
         if(msgbufget.mtype==INIT){
-
+            
             if(real_clients_no==CLIENTS_NO || full==1){                 //when list of clients is full checks stopped clients
                 full=1;
                 for(int i=0;i<real_clients_no;i++){
@@ -48,9 +58,10 @@ int main(){
 
             int queue = msgget(client_info.key,S_IRWXU);                      // opens client's queue
             
-            struct msgbuf msg;;                                         // prepares return message
+            struct msgbuf msg;                                         // prepares return message
             msg.mtype = INIT;
             msg.msender_id=real_clients_no;
+            real_clients_no++;
 
             if( msgsnd(queue, &msg, MSG_SIZE, IPC_NOWAIT)==-1){         // sends to client it's id
                 perror("error");
@@ -59,21 +70,30 @@ int main(){
         }
         //LIST
         else if(msgbufget.mtype==LIST){
-            char status[30];
-
+            
             if(full==1)
                 real_clients_no=CLIENTS_NO;
 
+            int queue = msgget(msgbufget.mkey,S_IRWXU);
 
             for(int i=0;i<real_clients_no;i++){                         // prints informations about not-stopped clients
-                
-                if(clients[i].status==CONNECT)
-                    strcpy(status, "not available for connection");
-                else
-                    strcpy(status, "available for connection");
 
-                if(clients[i].status!=STOP) 
-                printf("client's id: %d, status: %s\n",i, status);
+                if(clients[i].status!=STOP){
+                    msg.mtype = LIST;
+                    msg.msender_id=i;
+                    msg.mconnect_id = clients[i].status;
+
+                    if( msgsnd(queue, &msg, MSG_SIZE, IPC_NOWAIT)==-1){         // sends to client it's id
+                        perror("error");
+                        return 1;
+                    }
+                }   
+            }
+            msg.mtype = LIST;
+            msg.msender_id=-1;
+            if( msgsnd(queue, &msg, MSG_SIZE, IPC_NOWAIT)==-1){         // sends to client it's id
+                perror("error");
+                return 1;
             }
         }
         //CONNECT
@@ -90,7 +110,7 @@ int main(){
             msg.mkey = clients[msgbufget.mconnect_id].key;
 
             if( msgsnd(queue, &msg, MSG_SIZE, IPC_NOWAIT)==-1){         // sends to client key to connect
-                perror("error");
+                perror("send error - queue");
                 return 1;
             }
 
@@ -98,7 +118,7 @@ int main(){
             msg.mkey = clients[msgbufget.msender_id].key;
             
             if( msgsnd(queue2, &msg, MSG_SIZE, IPC_NOWAIT)==-1){         // sends to client key to connect
-                perror("error");
+                perror("send error - queue2");
                 return 1;
             }
 

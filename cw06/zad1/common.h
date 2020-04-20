@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
+#define MSG_EXCEPT 020000
 
 #define MSG 6
 #define INIT 5
@@ -16,8 +17,9 @@
 #define DISCONNECT 2
 #define STOP 1
 
-#define MSG_SIZE 256
+#define MSG_SIZE sizeof(struct msgbuf)-8
 #define CLIENTS_NO 32
+
 
 struct msgbuf {
   long mtype;         /* typ komunikatu   */
