@@ -13,15 +13,14 @@ struct client_info clients[CLIENTS_NO];
 int server_queue;
 
 
-
 void send_msg(int type, int connect_id, int sender_id, key_t key, int queue){
-    struct msgbuf msg;
+    struct msgbufget msg;
     msg.mtype = type;
     msg.mkey=key;
     msg.msender_id=sender_id;
     msg.mconnect_id=connect_id;
 
-    if( mq_send(queue, &msg, MSG_SIZE, 2)==-1){
+    if( mq_send(queue, (char *) &msg, sizeof(struct msgbufget), 2)==-1){
         perror("error");
         return;
     }
@@ -59,13 +58,21 @@ void Chandler(int hand){
 }
 
 int main(){
-
+    
     atexit(exit_function);
     signal(SIGINT, Chandler);    
     real_clients_no=0;
     server_key = ftok(getenv("HOME"), 1);
+
+    char name[24];
+    sprintf(name, "/%d", (int)server_key);
+    if(mq_unlink(name) == 0)
+        fprintf(stdout, "Message queue %s removed from system.\n", name);
+
     server_queue = make_msg(server_key, IPC_CREAT | S_IRWXU );
 
+
+    
     if(server_queue==-1){
         perror("error during during creating queue");
         return 1;

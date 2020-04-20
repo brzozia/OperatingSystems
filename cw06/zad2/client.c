@@ -1,5 +1,5 @@
 #include "common.h"
-#define MSG_SIZE_MSG sizeof(struct chat_msg)
+// #define MSG_SIZE_MSG sizeof(struct chat_msg)
 #define INPUT_SIZE 256
 
 int my_id=-1;
@@ -7,19 +7,19 @@ int server_queue;
 key_t my_key;
 int friend_queue; 
 
-struct chat_msg{
-    long mtype;
-    char msg[256];
-};
+// struct chat_msg{
+//     long mtype;
+//     char msg[256];
+// };
 
 void send_msg(int type, int connect_id){
-    struct msgbuf msg;
+    struct msgbufget msg;
     msg.mtype = type;
     msg.mkey=my_key;
     msg.msender_id=my_id;
     msg.mconnect_id=connect_id;
 
-    if( mq_send(server_queue, &msg, MSG_SIZE, 2)==-1){
+    if( mq_send(server_queue,(char *)  &msg, sizeof(struct msgbufget), 2)==-1){
         perror("error");
         exit(0) ;
     }
@@ -28,14 +28,25 @@ void send_msg(int type, int connect_id){
 
 
 void send_chat(char *input, int queue){
-    struct chat_msg sended;
+    struct msgbufget sended;
     sended.mtype=MSG;
     strcpy(sended.msg,input);
-    if( mq_send(queue, &sended, MSG_SIZE_MSG, 2)==-1){
+    if( mq_send(queue,(char *)  &sended,sizeof(struct msgbufget), 2)==-1){
         perror("error - send chat");
         exit(0) ;
     }
 
+}
+
+
+int get_chat(int queue, struct msgbufget *chat_msg, int size, int type, int flag){
+  if(flag==IPC_NOWAIT)
+    return mq_receive(queue,(char *) chat_msg, sizeof(struct msgbufget), NULL);
+  else{
+    int read=0;
+    while((read=mq_receive(queue,(char *) chat_msg, sizeof(struct msgbufget), NULL))<=0);
+    return read;
+  }
 }
 
 int parse_input(char *input){
@@ -62,7 +73,7 @@ int chat_with_friend(int my_queue, int friend_queue, int who){
 
     char input[INPUT_SIZE];
     int type;
-    struct chat_msg received;
+    struct msgbufget received;
     
     if(who==0){
         printf("enter message to client or DISCONNECT\n");
@@ -76,7 +87,7 @@ int chat_with_friend(int my_queue, int friend_queue, int who){
     }
     
     while(1){
-        if(get_msg(my_queue, &received, MSG_SIZE_MSG, MSG, IPC_NOWAIT)>0){
+        if(get_chat(my_queue, &received, MSG_SIZE, MSG, IPC_NOWAIT)>0){
             printf("received: %s\n",received.msg);
 
             if(strcmp(received.msg,"DISCONNECT")==0)
@@ -132,7 +143,7 @@ int main(){
     signal(SIGINT, Chandler);
     my_key = ftok(getenv("HOME"),(int)getpid());
     key_t server_key = ftok(getenv("HOME"), 1);
-    int queue = msgget(my_key, IPC_CREAT | S_IRWXU);
+    int queue = make_msg(my_key, IPC_CREAT | S_IRWXU);
     server_queue = make_msg(server_key,0);
 
     if(queue==-1){
@@ -207,7 +218,7 @@ int main(){
         }
         //STOP
         else if(msgbufget.mtype==STOP || type==STOP){
-            print("get stop");
+            printf("get stop");
             exit(0);
         }
         else if(msgbufget.mtype==CONNECT){

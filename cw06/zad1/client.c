@@ -131,7 +131,7 @@ int main(){
     signal(SIGINT, Chandler);
     my_key = ftok(getenv("HOME"),(int)getpid());
     key_t server_key = ftok(getenv("HOME"), 1);
-    int queue = msgget(my_key, IPC_CREAT | S_IRWXU);
+    int queue = make_msg(my_key, IPC_CREAT | S_IRWXU);
     server_queue = make_msg(server_key,S_IRWXU);
 
     if(queue==-1){
@@ -206,7 +206,7 @@ int main(){
         }
         //STOP
         else if(msgbufget.mtype==STOP || type==STOP){
-            print("get stop");
+            printf("get stop");
             exit(0);
         }
         else if(msgbufget.mtype==CONNECT){
