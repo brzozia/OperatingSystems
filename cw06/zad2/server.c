@@ -33,23 +33,24 @@ void exit_function(){
     if(full==1)
         real_clients_no=CLIENTS_NO;
     
-    int received=0;
+
     struct msgbufget msgg;
 
     for(int i=0;i<real_clients_no;i++){                         // prints informations about not-stopped clients
         if(clients[i].status!=STOP){
             send_msg(STOP,-1, -1,-1,clients[i].decr);
+		    
             while(get_msg(server_queue, &msgg, sizeof(msgg), STOP, 0)<=0);
-                
-            if(msgg.mconnect_id==i)
-                received++;
+            mq_close(clients[i].decr);
+            
         }     
     }
 
     struct msqid_ds buff;
     if(rm_msg(server_queue,IPC_RMID, &buff )){
-        perror("remove queue");
+        perror("close queue");
     }
+
     char name[24];
     sprintf(name, "/%d", (int)server_key);
     mq_unlink(name);
@@ -164,6 +165,7 @@ int main(){
         //STOP
         else if(msgg.mtype==STOP){
             clients[msgg.msender_id].status=STOP;
+		    mq_close(clients[msgg.msender_id].decr);
         }
     }
 

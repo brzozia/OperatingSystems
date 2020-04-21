@@ -22,13 +22,6 @@
 #define CLIENTS_NO 32
 
 
-// struct msgbuf {
-//   long mtype;         /* typ komunikatu   */
-//   key_t mkey;
-//   int msender_id;
-//   int mconnect_id;
-// };
-
 struct msgbufget {
   long mtype;         /* typ komunikatu   */
   key_t mkey;

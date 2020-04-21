@@ -41,23 +41,16 @@ int parse_input(char *input){
         return LIST;
     else if(strcmp(input, "CONNECT")==0)
         return CONNECT;
-    else if(strcmp(input, "DISCONNECT")==0)
+    else if(strcmp(input, "DISCONNECT\n")==0)
         return DISCONNECT;
-    else if(strcmp(input, "STOP")==0)
+    else if(strcmp(input, "STOP")==0 || strcmp(input, "STOP\n")==0 )
         return STOP;
     else
         return MSG;
 }
 
-void ChatChandler(int hand){
-    send_chat("DISCONNECT",friend_queue);
-    mq_close(friend_queue);
-
-    exit(0);
-}
 
 int chat_with_friend(int my_queue, int friend_queue, int who){
-    signal(SIGINT, ChatChandler);
     printf("now you can chat with other client\n");
 
     char input[INPUT_SIZE];
@@ -66,8 +59,7 @@ int chat_with_friend(int my_queue, int friend_queue, int who){
     
     if(who==0){
         printf("enter message to client or DISCONNECT\n");
-        //  getline(&input, )
-        scanf("%s",input);
+         while(strcmp(fgets(input, sizeof(input), stdin),"\n")==0);
 
         if((type=parse_input(input))!=MSG){
             return type;
@@ -77,16 +69,15 @@ int chat_with_friend(int my_queue, int friend_queue, int who){
     
     while(1){
         if(get_msg(my_queue, &received, sizeof(received), MSG, 0)>0){
-            printf("received: %s\n",received.msg);
+            printf("received: %s",received.msg);
 
-            if(strcmp(received.msg,"DISCONNECT")==0)
+            if(strcmp(received.msg,"DISCONNECT\n")==0)
                 return DISCONNECT;
-            if(strcmp(received.msg,"STOP")==0)
+            if(strcmp(received.msg,"STOP\n")==0)
                 return DISCONNECT;
             
             printf("enter message to client or DISCONNECT\n");
-            //  fgets(input, INPUT_SIZE, stdin);
-             scanf("%s",input);
+             while(strcmp(fgets(input, sizeof(input), stdin),"\n")==0);
 
             send_chat(input,friend_queue);
 
@@ -205,7 +196,7 @@ int main(){
             int next_type = chat_with_friend(queue, friend_queue,0);
             mq_close(friend_queue);
 
-        
+            msg.mtype=-1;
             if(next_type==DISCONNECT){                                              // disconnecting or stoping
                 disconnect(my_id, server_queue);
             }
@@ -220,7 +211,7 @@ int main(){
         else if(msg.mtype==CONNECT){
             int fd = make_msg(msg.mkey,0);
             int next_type = chat_with_friend(queue, fd, 1);
-
+            msg.mtype=-1;
             if(next_type==DISCONNECT){                                              // disconnecting or stoping
                 disconnect(my_id, server_queue);
                 mq_close(fd);

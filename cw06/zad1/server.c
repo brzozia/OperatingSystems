@@ -4,7 +4,7 @@
 struct client_info{
     key_t key;
     int status;
-    // int demakecr;
+    int decr;
 };
 
 key_t server_key;
@@ -38,7 +38,7 @@ void exit_function(){
 
     for(int i=0;i<real_clients_no;i++){                         // prints informations about not-stopped clients
         if(clients[i].status!=STOP){
-            send_msg(STOP,-1, -1,-1,make_msg(clients[i].key,0));
+            send_msg(STOP,-1, -1,-1,clients[i].decr);
             while(get_msg(server_queue, &msgg, MSG_SIZE, STOP, 0)<=0);
                 
             if(msgg.mconnect_id==i)
@@ -67,7 +67,7 @@ int main(){
     server_queue = make_msg(server_key, IPC_CREAT | S_IRWXU );
 
     if(server_queue==-1){
-        perror("error during during creating queue");
+        perror("error during creating queue");
         return 1;
     }
 
@@ -101,7 +101,7 @@ int main(){
             client_info.key=msgbufget.mkey;             
             client_info.status=INIT;
             int queue = make_msg(client_info.key,S_IRWXU); 
-            // client_info.decr=queue;
+             client_info.decr=queue;
             clients[real_clients_no]=client_info;
 
             
@@ -115,7 +115,7 @@ int main(){
             if(full==1)
                 real_clients_no=CLIENTS_NO;
 
-            int queue = make_msg(msgbufget.mkey,0);
+            int queue = clients[msgbufget.msender_id].decr;//make_msg(msgbufget.mkey,0);
 
             for(int i=0;i<real_clients_no;i++){                         // prints informations about not-stopped clients
 
@@ -133,11 +133,11 @@ int main(){
                 break;
             }
 
-            int queue = make_msg(msgbufget.mkey, 0);                       // opens client's queue
+            int queue = make_msg(msgbufget.mkey, 0);  //clients[msgbufget.msender_id].decr;//                     // opens client's queue
             send_msg(CONNECT,-1,-1,clients[msgbufget.mconnect_id].key,queue);
             
 
-            int queue2 = make_msg(clients[msgbufget.mconnect_id].key, 0);
+            int queue2 = make_msg(clients[msgbufget.mconnect_id].key, 0);//clients[msgbufget.mconnect_id].decr;
             send_msg(CONNECT,-1,-1,clients[msgbufget.msender_id].key,queue2);
             
 

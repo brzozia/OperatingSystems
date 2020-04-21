@@ -61,9 +61,9 @@ int make_msg(key_t key, int flag){
   int newflag = 0;
   struct mq_attr attry;
   attry.mq_flags = O_NONBLOCK;
-  attry.mq_maxmsg = 2;
+  attry.mq_maxmsg = 8;
   attry.mq_msgsize = sizeof(struct msgbufget);
-  attry.mq_curmsgs = 1;
+  attry.mq_curmsgs = 8;
 
   newflag=O_CREAT | O_RDWR;
 

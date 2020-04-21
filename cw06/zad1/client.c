@@ -1,6 +1,6 @@
 #include "common.h"
 #define MSG_SIZE_MSG sizeof(struct chat_msg)-8
-#define INPUT_SIZE 256
+#define INPUT_SIZE 128
 
 int my_id=-1;
 int server_queue;
@@ -9,12 +9,12 @@ int friend_queue;
 
 struct chat_msg{
     long mtype;
-    char msg[256];
+    char msg[INPUT_SIZE];
 };
 
 
 int get_chat(int queue, struct chat_msg *Caa, int size, int type, int flag){
-    return msgrcv(queue, &Caa, size, type, flag);
+    return msgrcv(queue, Caa, size, type, flag);
 }
 
 void send_msg(int type, int connect_id){
@@ -47,56 +47,54 @@ int parse_input(char *input){
         return LIST;
     else if(strcmp(input, "CONNECT")==0)
         return CONNECT;
-    else if(strcmp(input, "DISCONNECT")==0)
+    else if(strcmp(input, "DISCONNECT\n")==0)
         return DISCONNECT;
-    else if(strcmp(input, "STOP")==0)
+    else if(strcmp(input, "STOP")==0 || strcmp(input, "STOP\n")==0 )
         return STOP;
     else
         return MSG;
 }
 
-void ChatChandler(int hand){
-    send_chat("DISCONNECT",friend_queue);
-    exit(0);
-}
 
 int chat_with_friend(int my_queue, int friend_queue, int who){
-    signal(SIGINT, ChatChandler);
     printf("now you can chat with other client\n");
 
     char input[INPUT_SIZE];
+    input[0]='\0';
     int type;
     struct chat_msg received;
-    
+
     if(who==0){
         printf("enter message to client or DISCONNECT\n");
-        //  getline(&input, )
-        scanf("%s",input);
+        while(strcmp(fgets(input, sizeof(input), stdin),"\n")==0);
+
 
         if((type=parse_input(input))!=MSG){
             return type;
         }
         send_chat(input,friend_queue);
+        
     }
     
     while(1){
         if(get_chat(my_queue, &received, MSG_SIZE_MSG, MSG, IPC_NOWAIT)>0){
-            printf("received: %s\n",received.msg);
+            printf("received: %s",received.msg);
 
-            if(strcmp(received.msg,"DISCONNECT")==0)
+            if(strcmp(received.msg,"DISCONNECT\n")==0)
                 return DISCONNECT;
-            if(strcmp(received.msg,"STOP")==0)
+            if(strcmp(received.msg,"STOP\n")==0)
                 return DISCONNECT;
             
             printf("enter message to client or DISCONNECT\n");
-            //  fgets(input, INPUT_SIZE, stdin);
-             scanf("%s",input);
+            while(strcmp(fgets(input, sizeof(input), stdin),"\n")==0);
+           
 
             send_chat(input,friend_queue);
 
             if((type=parse_input(input))!=MSG){
                 return type;
-            }
+            }             
+            
                        
         }
     }
@@ -149,7 +147,7 @@ int main(){
     struct msgbufget msgg;
 
     while(1){
-        
+
         if(get_msg(queue, &msgg, MSG_SIZE, INIT, 0)>0){
             my_id=msgg.msender_id;
             printf("my id %d\n", my_id);
@@ -198,13 +196,13 @@ int main(){
             
 
             get_msg(queue, &msgg, MSG_SIZE, CONNECT, 0);                        // receives info from server
-            msgg.mtype=0;
+            
             friend_queue = make_msg(msgg.mkey,0);
             int next_type = chat_with_friend(queue, friend_queue,0);
-            msgg.mtype=next_type;
+            msgg.mtype=-1;
         
             if(next_type==DISCONNECT){                                              // disconnecting or stoping
-                disconnect(my_id, server_queue);
+                disconnect(my_id, server_queue);                
             }
             else if(next_type==STOP){
                 exit(0);
@@ -218,8 +216,10 @@ int main(){
         //RECEIVE MSG
         else if(msgg.mtype==CONNECT){
 
-            int next_type = chat_with_friend(queue, make_msg(msgg.mkey,0), 1);
-
+            int desc= make_msg(msgg.mkey,0);
+            int next_type = chat_with_friend(queue, desc, 1);
+            msgg.mtype=-1;
+           
             if(next_type==DISCONNECT){                                              // disconnecting or stoping
                 disconnect(my_id, server_queue);
             }
