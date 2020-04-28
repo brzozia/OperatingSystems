@@ -21,10 +21,10 @@ union semun {
     struct seminfo  *__buf;  /* Buffer for IPC_INFO (Linux-specific) */
 };
 
-#define ARRAY_SIZE 5
-#define MAX_PRODUCTS 10
-#define NO_OF__ONE_TYPE_WORKERS 3
-#define SEM_NO 3
+#define ARRAY_SIZE 7
+#define MAX_PRODUCTS 30
+#define NO_OF__ONE_TYPE_WORKERS 5
+#define SEM_NO 3 // one to connect with array, one to get number of made packages (packages "to prepare"), one to get number of prepared packages (packages "to send")
 
 
 struct data{
@@ -33,11 +33,11 @@ struct data{
 };
 
 struct sh_struct{
-    struct data array12[ARRAY_SIZE]; //array between first and second worker
-    int sended3;
-    int prepared2;
-    int made1;
-    int loop1;
+    struct data array12[ARRAY_SIZE]; 
+    int sended3; //number of sended packages
+    int prepared2; //number of all prepared packages
+    int made1; //number of all made packages
+    int loop1; //loops are to help with cycle array
     int loop2;
     int loop3;
 
@@ -47,14 +47,7 @@ struct sh_struct{
 
 sem_t *semaf[SEM_NO];
 char names[SEM_NO][24];
-// int  sh_get(key_t key, size_t size, int flag){
-//     int i= shmget( key,  size,  flag);
-//     if(i==-1){
-//         perror("get shm");
-//         exit(-1);
-//     }
-//     return i;
-// }
+
 
 struct tm * get_time(){
     time_t rawtime;
@@ -62,16 +55,6 @@ struct tm * get_time(){
     return localtime( &rawtime );
 }
 
-void *sh_memory(void *addr, size_t len, int prot, int flags, char * mem, off_t offset){
-    
-    int memory_id;
-    sscanf(mem,"%d",&memory_id);
-    void *memory_addr=mmap(addr,  len,  prot,  flags,  memory_id,  offset);
-    if(memory_addr ==(void *)-1){
-        perror("worker - shared memory addr");
-    }
-    return memory_addr;
-}
 
 void disconnect_memory(void *addr){
     if(munmap(addr,sizeof(struct sh_struct))==-1){
@@ -81,7 +64,7 @@ void disconnect_memory(void *addr){
 
 
 
-void sem_get( int k, int flags){
+void sem_get(int flags){
 
     for(int i=0;i<SEM_NO;i++){
 
@@ -91,10 +74,10 @@ void sem_get( int k, int flags){
         sprintf(name, "/%d", (int)semafor_key);
 
         if(i==0)
-            semaf[i]= sem_open( name,  flags,0666,1);
+            semaf[i]= sem_open( name,  flags,0666,1); 
         else
             semaf[i]= sem_open( name, flags,0666,0);
-        // printf("common: %d %s\n",i,names[i]);
+ 
         if(semaf[i]==NULL){
              perror("sem open error");
          }
@@ -103,7 +86,7 @@ void sem_get( int k, int flags){
 }
 
 
-int sem_ctl( int l, int semnum){
+int sem_ctl(int semnum){
     int res;
     int r=sem_getvalue(semaf[semnum],&res);
     if(r==-1){
@@ -114,18 +97,17 @@ int sem_ctl( int l, int semnum){
 }
 
 
-void sem_op(int l, int sem_nr, int opr){
+void sem_op( int sem_nr, int opr){
     if(opr>0){
         if(sem_post(semaf[sem_nr])==-1){
             perror("sem post");
         }
     }
     else{
-        // while(opr<0){
-            if(sem_wait(semaf[sem_nr])==-1){
-                perror("sem post");
-            }
-            opr++;
-        // }
+        if(sem_wait(semaf[sem_nr])==-1){
+            perror("sem post");
+        }
+        opr++;
+
     }
 }

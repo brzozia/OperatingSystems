@@ -1,17 +1,21 @@
 #include "common.h"
+//program makes small "jumps" during writing output on console - that is because every process=worker has to sleep(1) after adding package
+
 
 char sname[24];
 struct sh_struct *shared_struct;
 
+
 void exit_func(void){
-    printf("end program %d\n", (int)getpid());
-    sem_get(0,0);
+    printf("prog end program \n");
 
     for(int i=0;i<SEM_NO;i++){
         if(sem_close (semaf[i]) == -1 ){
-        perror(" sem close error\n");
+        perror("prog sem close error\n");
         }
-    sem_unlink(names[i]);
+        if(sem_unlink(names[i])==-1){
+            perror("prog sem unlink error\n");
+        }
 
     }
 
@@ -20,19 +24,20 @@ void exit_func(void){
     sprintf(sname, "/%d", (int)memory_key);
 
     if(shm_unlink(sname) == -1){
-        perror("shm unlink error\n");
+        perror("prog shm unlink error\n");
     }
 }
 
 void sig_handler(int hand){
-    exit_func();
+    sleep(1);
+    exit(0);
 }
 
 
 
 
 int main(){
-    // atexit(exit_func);
+    atexit(exit_func);
     signal(SIGINT, sig_handler);
     key_t memory_key = ftok(getenv("HOME"), 'l');
     
@@ -67,27 +72,24 @@ int main(){
 
     
 
-    sem_get( SEM_NO, O_RDWR|O_CREAT ); 
+    sem_get( O_RDWR|O_CREAT ); 
     
 
-    for(int i=0;i<1;i++){
+    for(int i=0;i<NO_OF__ONE_TYPE_WORKERS;i++){
         child_pid=(int)fork();
         
         if(child_pid==0){
-            printf("halo to ja1");
-            execl("./worker1", "./worker1",memory_str,"",NULL);
+            execl("./worker1", "./worker1",NULL);
         }
 
         child_pid=(int)fork();
         if(child_pid==0 ){
-            printf("halo to ja2");
-            execl("./worker2","./worker2",memory_str, "",NULL);
+            execl("./worker2","./worker2",NULL);
        }
             
         child_pid=(int)fork();
         if(child_pid==0 ){
-            printf("halo to ja");
-            execl("./worker3","./worker3",memory_str, "",NULL);
+            execl("./worker3","./worker3",NULL);
        }
     }
     while((child_pid=wait(NULL))!=-1);

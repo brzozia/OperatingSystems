@@ -14,3 +14,6 @@ worker3:worker3.c common.h
 
 clean:
 	 rm -f *.o *.a *.so *.tmp main
+
+test:
+	./program
