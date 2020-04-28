@@ -21,9 +21,9 @@ union semun {
     struct seminfo  *__buf;  /* Buffer for IPC_INFO (Linux-specific) */
 };
 
-#define ARRAY_SIZE 5
-#define MAX_PRODUCTS 10
-#define NO_OF__ONE_TYPE_WORKERS 6
+#define ARRAY_SIZE 3
+#define MAX_PRODUCTS 100
+#define NO_OF__ONE_TYPE_WORKERS 3
 
 
 struct data{
@@ -32,10 +32,13 @@ struct data{
 };
 
 struct sh_struct{
-    struct data array12[ARRAY_SIZE]; //array between first and second worker
-    int sended3;
-    int prepared2;
-    int made1;
+    struct data array12[ARRAY_SIZE]; 
+    int sended3; //number of sended packages
+    int prepared2; //number of all prepared packages
+    int made1; //number of all made packages
+    int loop1; //loops are to help with cycle array
+    int loop2;
+    int loop3;
 };
 
 
@@ -84,7 +87,6 @@ int sem_ctl(int semid, int semnum, int cmd, int arg){
     sem_num.val=arg;
     int r=semctl( semid,  semnum,  cmd,  sem_num);
     if(r==-1){
-        printf("ctll:%d %d", semnum, cmd);
         perror("sem ctl");
     }
     return r;
@@ -95,7 +97,6 @@ void sem_op(int semid, int sem_nr, int opr){
     sem_buf.sem_num=sem_nr;
     sem_buf.sem_op=opr;
     if(semop( semid, &sem_buf,  1)==-1){
-        printf("oppp: %d, %d",sem_nr, opr);
         perror("sem op");
     }
 }

@@ -4,7 +4,7 @@ int memory_id;
 int sem_id;
 
 void exit_func(){
-    printf("end program %d", (int)getpid());
+    printf("end program %d\n", (int)getpid());
 
     if(sem_ctl (sem_id,0,IPC_RMID,0) == -1 ){
         perror("sem ctl closing error n");
@@ -15,13 +15,13 @@ void exit_func(){
    
 }
 void sig_handler(int hand){
-    exit_func();
+    exit(0);
 }
 
 int main(){
     atexit(exit_func);
     signal(SIGINT, sig_handler);
-    int sem_no=3; //one semafor to operate on arrays, one to count items to prepare, one to count items to send, one to count all sended items, ine to count all prepared items
+    int sem_no=3; // one to connect with array, one to get number of made packages (packages "to prepare"), one to get number of prepared packages (packages "to send")
 
     key_t memory_key = ftok(getenv("HOME"), 'm');
      memory_id = sh_get( memory_key,  sizeof(struct sh_struct),  IPC_CREAT | S_IRWXU);
@@ -30,6 +30,9 @@ int main(){
     shared_struct->made1=0;
     shared_struct->prepared2=0;
     shared_struct->sended3=0;
+    shared_struct->loop1=0;
+    shared_struct->loop2=0;
+    shared_struct->loop3=0;
     for(int i=0;i<ARRAY_SIZE;i++){
         shared_struct->array12[i].no=-1;
     }

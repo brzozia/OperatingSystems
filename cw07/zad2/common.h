@@ -23,7 +23,7 @@ union semun {
 
 #define ARRAY_SIZE 7
 #define MAX_PRODUCTS 30
-#define NO_OF__ONE_TYPE_WORKERS 5
+#define NO_OF__ONE_TYPE_WORKERS 4
 #define SEM_NO 3 // one to connect with array, one to get number of made packages (packages "to prepare"), one to get number of prepared packages (packages "to send")
 
 
