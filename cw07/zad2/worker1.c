@@ -1,38 +1,41 @@
 #include "common.h"
+sem_t *semaf[SEM_NO];
+// struct sh_struct *shared_struct;
 
-struct sh_struct *shared_struct;
-// int sem_id;
-
-// void exit1(void){
-//     sem_op(sem_id,0,1);
-//     disconnect_memory(shared_struct);
-//     exit(0);
-   
-// }
-// void hand1(int hand){
-//     exit1();
-// }
 
 int main(int argc, char **argv){
-    // signal(SIGUSR1, hand1);
     if(argc<2){
         printf("worker1 - Wrong numer of arguments\n");
     }
-printf("hello");
+
     int x=0,i, z,j;
     struct tm * timeinfo;
     struct timeval tim;
-    // sscanf(argv[2], "%d", &sem_id);
-    shared_struct=sh_memory(NULL, sizeof(struct sh_struct), PROT_READ |PROT_EXEC |PROT_WRITE ,MAP_SHARED, argv[1],0);
+    for(int i=0;i<SEM_NO;i++){
+
+        if(i==0)
+            semaf[i]= sem_open( names[i],O_RDWR,0666,1);
+        else
+            semaf[i]= sem_open( names[i],O_RDWR,0666,0);
+        
+        if(semaf[i]==NULL){
+             perror("1sem open error");
+         }
+    }
+    char name[24];
+    key_t memory_key = ftok(getenv("HOME"), 'l');
+    sprintf(name, "/%d", (int)memory_key);
+    int memory_id = shm_open( name, O_RDWR | O_EXCL,666);
+
+    struct sh_struct *shared_struct=mmap( NULL, sizeof(struct sh_struct), PROT_READ |PROT_EXEC |PROT_WRITE ,MAP_SHARED, memory_id,0);
+    // shared_struct=sh_memory(NULL, sizeof(struct sh_struct), PROT_READ |PROT_EXEC |PROT_WRITE ,MAP_SHARED, argv[1],0);
 
     
     while(1){
-        printf("hello");
-        if(shared_struct->made1!=0)
-            sem_op(0,0,-1);
+        // if(shared_struct->made1!=0)
+        sem_op(0,0,-1);
 
         if(shared_struct->made1>=MAX_PRODUCTS){
-            // raise(SIGUSR1);
             sem_op(0,0,1);
             disconnect_memory(shared_struct);
             exit(0);

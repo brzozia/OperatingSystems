@@ -2,18 +2,18 @@
 
 char name[24];
 
-
 void exit_func(void){
-    printf("zabili mnie %d\n", (int)getpid());
+    printf("end program %d\n", (int)getpid());
     for(int i=0;i<SEM_NO;i++){
         if(sem_close (semaf[i]) == -1 ){
-        perror(" blad zamykania semaforow\n");
-    }
+        perror(" sem close error\n");
+        }
+    sem_unlink(names[i]);
 
     }
     
     if(shm_unlink(name) == -1){
-        perror("blad zamykania pamieci wspoldzielonej\n");
+        perror("shm unlink error\n");
     }
    
 }
@@ -28,14 +28,14 @@ int main(){
     atexit(exit_func);
     signal(SIGINT, sig_handler);
     key_t memory_key = ftok(getenv("HOME"), 'l');
-    sprintf(name, "/%d", (int)memory_key);
-     memory_id = shm_open( name,  O_CREAT | O_RDWR | O_EXCL,666);
+    
+    sprintf(name, "/shmm%d", (int)memory_key);
+    int memory_id = shm_open( name,  O_CREAT | O_RDWR | O_TRUNC,0666);
 
     if(memory_id==-1){
         perror("shm_opern error");
     }
     int size=sizeof(struct sh_struct);
-    printf("%d",size);
     if(ftruncate( memory_id, size)==-1){
         perror("fruncate erroe");
     }
@@ -52,13 +52,13 @@ int main(){
     }
     disconnect_memory(shared_struct);
 
-    char memory_str[11];
+    char memory_str[36];
     sprintf(memory_str, "%d",memory_id);
     int child_pid;
 
     
 
-    sem_get( SEM_NO, O_CREAT | S_IRWXU); 
+    sem_get( SEM_NO, O_CREAT ); 
     
 
     // char array[SEM_NO+3][64], sem_str[24];
@@ -77,24 +77,21 @@ int main(){
     
 
     for(int i=0;i<NO_OF__ONE_TYPE_WORKERS;i++){
-        child_pid=(int)fork();
+        // child_pid=(int)fork();
         
-        if(child_pid==0 ){
-            // strcpy(array[0],"./worker1");
-            execl("./worker1", "./worker1",memory_str,NULL);
-        }
+        // if(child_pid==0 ){
+            execl("./worker1", "./worker1",memory_str,"",NULL);
+        // }
+
+        child_pid=(int)fork();
+        if(child_pid==0 ){printf("klocki");
+            execl("./worker2","./worker2",memory_str, NULL);
+       }
             
         child_pid=(int)fork();
-        if(child_pid==0 ){
-            // strcpy(array[0],"./worker2");
-            execl("./worker2","./worker1",memory_str, NULL);
-        }
-            
-        child_pid=(int)fork();
-        if(child_pid==0 ){
-            // strcpy(array[0],"./worker3");
-            execl("./worker3","./worker1" ,memory_str,NULL);
-        }
+        if(child_pid==0 ){printf("klocki");
+            execl("./worker3","./worker3" ,memory_str,NULL);
+       }
     }
     while((child_pid=wait(NULL))!=-1);
 

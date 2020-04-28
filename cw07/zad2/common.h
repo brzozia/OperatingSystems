@@ -1,4 +1,3 @@
-
 #include <stdlib.h>
 #include <stdio.h>
 #include<unistd.h> 
@@ -13,7 +12,6 @@
 #include <sys/time.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <pthread.h>
 
 
 union semun {
@@ -46,7 +44,7 @@ struct sh_struct{
 // };
 
  sem_t *semaf[SEM_NO];
-int memory_id;
+char names[SEM_NO][24];
 // int  sh_get(key_t key, size_t size, int flag){
 //     int i= shmget( key,  size,  flag);
 //     if(i==-1){
@@ -64,8 +62,8 @@ struct tm * get_time(){
 
 void *sh_memory(void *addr, size_t len, int prot, int flags, char * mem, off_t offset){
     
-    // int memory_id;
-    // sscanf(mem,"%d",&memory_id);
+    int memory_id;
+    sscanf(mem,"%d",&memory_id);
     void *memory_addr=mmap(addr,  len,  prot,  flags,  memory_id,  offset);
     if(memory_addr ==(void *)-1){
         perror("worker - shared memory addr");
@@ -81,20 +79,22 @@ void disconnect_memory(void *addr){
 
 void sem_get( int i, int flags){
 
-    // struct semafores semafores_set;
     for(int i=0;i<SEM_NO;i++){
-        key_t semafor_key = ftok(getenv("HOME"), 's');
+
+        key_t semafor_key = ftok(getenv("HOME"), i);
         char name[24];
-        sprintf(name, "/%d", (int)semafor_key);
-         sem_t *add= sem_open( name,  flags,666,0);
-        semaf[i]=add;
+        sprintf(name, "/sem%d", (int)semafor_key);
+
+        if(i==0)
+            semaf[i]= sem_open( name,  O_RDWR|O_CREAT,0666,1);
+        else
+            semaf[i]= sem_open( name, O_RDWR| O_CREAT,0666,0);
+        
+        if(semaf[i]==NULL){
+             perror("sem open error");
+         }
+        strcpy(names[i],name);
     }
-
-
-    // if(sem_id==-1){
-    //     perror("add semafors");
-    // }
-    // return semafores_set;
 }
 
 
@@ -116,11 +116,11 @@ void sem_op(int l, int sem_nr, int opr){
         }
     }
     else{
-        while(opr<0){
+        // while(opr<0){
             if(sem_wait(semaf[sem_nr])==-1){
                 perror("sem post");
             }
             opr++;
-        }
+        // }
     }
 }

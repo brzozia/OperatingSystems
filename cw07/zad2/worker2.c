@@ -1,4 +1,6 @@
 #include "common.h"
+sem_t *semaf[SEM_NO];
+
 
 int main(int argc, char **argv){
     if(argc<2){
@@ -6,12 +8,24 @@ int main(int argc, char **argv){
     }
 
     int p=0,x=0,j=0,z;
-    // struct semafores semafs;
-    // for(int i=0;i<SEM_NO;i++){
-    //     semafs.semaf[0]=
-    // }
-    // sscanf(argv[2], "%d", &sem_id);
-    struct sh_struct *shared_struct=sh_memory(NULL, sizeof(struct sh_struct), PROT_READ |PROT_EXEC |PROT_WRITE ,MAP_SHARED, argv[1],0);
+    char name[24];
+    key_t memory_key = ftok(getenv("HOME"), 'l');
+    sprintf(name, "/%d", (int)memory_key);
+    int memory_id = shm_open( name, O_RDWR | O_EXCL,666);
+    struct sh_struct *shared_struct=mmap( NULL, sizeof(struct sh_struct), PROT_READ |PROT_EXEC |PROT_WRITE ,MAP_SHARED, memory_id,0);
+    // struct sh_struct *shared_struct=sh_memory(NULL, sizeof(struct sh_struct), PROT_READ |PROT_EXEC |PROT_WRITE ,MAP_SHARED, argv[1],0);
+    for(int i=0;i<SEM_NO;i++){
+
+        if(i==0)
+            semaf[i]= sem_open( names[i],  0,0666,1);
+        else
+            semaf[i]= sem_open( names[i],  0,0666,0);
+        
+        if(semaf[i]==NULL){
+             perror("2sem open error");
+         }
+    }
+    
     struct tm * timeinfo;
     struct timeval tim;
 

@@ -23,7 +23,7 @@ union semun {
 
 #define ARRAY_SIZE 5
 #define MAX_PRODUCTS 10
-#define NO_OF__ONE_TYPE_WORKERS 5
+#define NO_OF__ONE_TYPE_WORKERS 6
 
 
 struct data{

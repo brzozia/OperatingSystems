@@ -4,13 +4,13 @@ int memory_id;
 int sem_id;
 
 void exit_func(){
-    printf("\33[31m aaa zabili mnie %d \n \33[37m", (int)getpid());
+    printf("end program %d", (int)getpid());
 
-    if(semctl (sem_id,IPC_RMID,0) == -1 ){
-        perror("\033[31m blad zamykania semaforow\n");
+    if(sem_ctl (sem_id,0,IPC_RMID,0) == -1 ){
+        perror("sem ctl closing error n");
     }
     if(shmctl(memory_id,IPC_RMID ,0) == -1){
-        perror("\033[31m blad zamykania pamieci wspoldzielonej\n");
+        perror("shm ctl closing error\n");
     }
    
 }
