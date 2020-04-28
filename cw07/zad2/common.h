@@ -23,7 +23,7 @@ union semun {
 
 #define ARRAY_SIZE 5
 #define MAX_PRODUCTS 10
-#define NO_OF__ONE_TYPE_WORKERS 5
+#define NO_OF__ONE_TYPE_WORKERS 3
 #define SEM_NO 3
 
 
@@ -37,13 +37,15 @@ struct sh_struct{
     int sended3;
     int prepared2;
     int made1;
+    int loop1;
+    int loop2;
+    int loop3;
+
 };
 
-// struct semafores{
-//     sem_t *semaf[SEM_NO];
-// };
 
- sem_t *semaf[SEM_NO];
+
+sem_t *semaf[SEM_NO];
 char names[SEM_NO][24];
 // int  sh_get(key_t key, size_t size, int flag){
 //     int i= shmget( key,  size,  flag);
@@ -73,23 +75,26 @@ void *sh_memory(void *addr, size_t len, int prot, int flags, char * mem, off_t o
 
 void disconnect_memory(void *addr){
     if(munmap(addr,sizeof(struct sh_struct))==-1){
-        perror("worker - memory disconnect");
+        perror("memory disconnect");
     }
 }
 
-void sem_get( int i, int flags){
+
+
+void sem_get( int k, int flags){
 
     for(int i=0;i<SEM_NO;i++){
 
         key_t semafor_key = ftok(getenv("HOME"), i);
         char name[24];
-        sprintf(name, "/sem%d", (int)semafor_key);
+        strcpy(name,"");
+        sprintf(name, "/%d", (int)semafor_key);
 
         if(i==0)
-            semaf[i]= sem_open( name,  O_RDWR|O_CREAT,0666,1);
+            semaf[i]= sem_open( name,  flags,0666,1);
         else
-            semaf[i]= sem_open( name, O_RDWR| O_CREAT,0666,0);
-        
+            semaf[i]= sem_open( name, flags,0666,0);
+        // printf("common: %d %s\n",i,names[i]);
         if(semaf[i]==NULL){
              perror("sem open error");
          }

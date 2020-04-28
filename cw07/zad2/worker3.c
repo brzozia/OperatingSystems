@@ -1,35 +1,34 @@
 #include "common.h"
 sem_t *semaf[SEM_NO];
+struct sh_struct *shared_struct;
 
+void exitwork(){
+    disconnect_memory(shared_struct);
+}
 
 int main(int argc, char **argv){
+    printf("!3!");
+    atexit(exitwork);
+
     if(argc<2){
         printf("worker3 - Wrong numer of arguments\n");
     }
 
-    int sem_id,x=0,p=0,z,j=0;
-    sscanf(argv[2], "%d", &sem_id);
+    int x=0,p=0,z;
+    // sscanf(argv[2], "%d", &sem_id);
     char name[24];
-    for(int i=0;i<SEM_NO;i++){
-
-        if(i==0)
-            semaf[i]= sem_open( names[i],  0,0666,1);
-        else
-            semaf[i]= sem_open( names[i],  0,0666,0);
-        
-        if(semaf[i]==NULL){
-             perror("3sem open error");
-         }
-    }
+    sem_get(0,O_RDWR);
 
     key_t memory_key = ftok(getenv("HOME"), 'l');
     sprintf(name, "/%d", (int)memory_key);
-    int memory_id = shm_open( name, O_RDWR | O_EXCL,666);
-    struct sh_struct *shared_struct=mmap( NULL, sizeof(struct sh_struct), PROT_READ |PROT_EXEC |PROT_WRITE ,MAP_SHARED, memory_id,0);
+    int memory_id = shm_open( name, O_RDWR ,0666);
+    if(memory_id==-1){
+        perror("3 open memory error");
+    }
+    shared_struct=mmap( NULL, sizeof(struct sh_struct), PROT_READ |PROT_EXEC |PROT_WRITE ,MAP_SHARED, memory_id,0);
     // struct sh_struct *shared_struct=sh_memory(NULL, sizeof(struct sh_struct), PROT_READ |PROT_EXEC |PROT_WRITE ,MAP_SHARED, argv[1],0);
     struct tm * timeinfo;
     struct timeval tim;
-
     while(1){
         
 
@@ -43,9 +42,10 @@ int main(int argc, char **argv){
 
         // sem_op(sem_id,0,-1);
 
-        for(j=0;j<ARRAY_SIZE;j++){
+        int loop=0;
+        while(shared_struct->loop3<ARRAY_SIZE){
+            int j=shared_struct->loop3;
             if(shared_struct->array12[j].worker==2){
-
                 p=shared_struct->array12[j].no*3;
                 shared_struct->array12[j].no=-1;
                 shared_struct->array12[j].worker=3;
@@ -63,11 +63,16 @@ int main(int argc, char **argv){
 
                 break;
             }
+            shared_struct->loop3++;loop++;
+            if(shared_struct->loop3==ARRAY_SIZE)
+                shared_struct->loop3=0;
+            if(loop==ARRAY_SIZE)
+                break;
         }
         sem_op(0,0,1);
 
     }
-    disconnect_memory(shared_struct);
+    // disconnect_memory(shared_struct);
     exit(0);
 
 }
