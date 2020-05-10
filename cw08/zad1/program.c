@@ -98,7 +98,7 @@ void *pth_sign(void * strid){
         }
     }
     clock_gettime(CLOCK_REALTIME,&end);
-    long int time=(end.tv_sec-start.tv_sec)*1000000 +(end.tv_nsec-start.tv_nsec)*1000;
+    long int time=(end.tv_sec-start.tv_sec)*1000000 +(end.tv_nsec-start.tv_nsec)/1000;
     pthread_exit(&time);
 }
 
@@ -126,7 +126,7 @@ void *pth_block(void *strid){
     }
 
     clock_gettime(CLOCK_REALTIME,&end);
-    long int time=(end.tv_sec-start.tv_sec)*1000000 +(end.tv_nsec-start.tv_nsec)*1000;
+    long int time=(end.tv_sec-start.tv_sec)*1000000 +(end.tv_nsec-start.tv_nsec)/1000;
     pthread_exit(&time);
 }
 
@@ -150,7 +150,37 @@ void *pth_inter(void *strid){
     clock_gettime(CLOCK_REALTIME,&end);
    long long int time=(end.tv_sec-start.tv_sec)*1000000 +(end.tv_nsec-start.tv_nsec)/1000;
    //printf("%lld \n",time);
-    pthread_exit(&time);
+   pthread_exit(&time);
+}
+int maxv(){
+    int maxi=0;
+    for(int i=0;i<256;i++){
+        if(results[i]>maxi)
+            maxi=results[i];
+    }
+    return maxi;
+}
+
+void make_hist(FILE *fout){
+    int maxi=maxv();
+    fprintf(fout,"P2 \n%d %d \n255 \n",256*10,maxi);
+    for(int i=maxi;i>=0;i--){
+        for(int a=0;a<256;a++){
+            int c=0;
+            if(a<125){
+                c=255;
+            }
+            if(results[a]<i)
+                fprintf(fout, "%d %d %d %d %d %d %d %d %d %d ",c,c,c,c,c,c,c,c,c,c);
+            else
+            {
+                fprintf(fout, "%d %d %d %d %d %d %d %d %d %d ",a,a,a,a,a,a,a,a,a,a);
+            }
+            
+            //fprintf(fout,"color: %d, occurence %d \n",a,results[a]);
+        }
+        fprintf(fout,"\n");
+    }
 }
 
 
@@ -188,30 +218,21 @@ int main(int argc, char ** argv){
         }
     }
     
+    void *fun;
 
     if(!strcmp(argv[2],"sign")){
         way=SIGN;
         num=divide_sign(pth);
-
-        for(int i=0;i<pth;i++){
-            int *pid=(int *)calloc(1,sizeof(int));
-            *pid=i;
-            if(pthread_create(&pth_id[i],NULL,pth_sign,(void *)pid)!=0)
-                perror("error while creating thread");
-        }
+        fun=pth_sign;
+        
     }
     else if(!strcmp(argv[2],"block")){
         way=BLOCK;
         num=divide_block(pth,fin);
         if(sem_init(&semaf,0,1)!=0)
             perror("error during creating semaphore\n");
-
-        for(int i=0;i<pth;i++){
-            int *pid=(int *)calloc(1,sizeof(int));
-            *pid=i;
-            if(pthread_create(&pth_id[i],NULL,pth_block,(void *)pid)!=0)
-                perror("error while creating thread");
-        }
+        fun=pth_block;
+        
     }
     else if(!strcmp(argv[2],"interleaved")){
         way=INTERLEAVED;
@@ -219,43 +240,45 @@ int main(int argc, char ** argv){
             perror("error during creating semaphore\n");
         num=(int*)calloc(1,sizeof(int));
         *num=pth;
-
-        for(int i=0;i<pth;i++){
-            int *pid=(int *)calloc(1,sizeof(int));
-            *pid=i;
-            if(pthread_create(&pth_id[i],NULL,pth_inter,(void *)pid)!=0)
-                perror("error while creating thread");
-        }
+        fun=pth_inter;
     }
     else{
         printf("wrong second argument\n");
         return 1;
     }
 
+//-----makes threads-------
+    for(int i=0;i<pth;i++){
+        int *pid=(int *)calloc(1,sizeof(int));
+        *pid=i;
+        if(pthread_create(&pth_id[i],NULL,fun,(void *)pid)!=0)
+            perror("error while creating thread");
+    }
 
     clock_gettime(CLOCK_REALTIME,&end);
 
     void *ti;
-    long long int * tir;
+    long long int *tir;
 
     for(int i=0;i<pth;i++){
-        pthread_join(pth_id[i], &ti);
+        if(pthread_join(pth_id[i], &ti)!=0)
+            perror("error occured during geting thread result");
         tir=ti;
         printf("Thread nr %d, took %lld us\n", i,*tir);
     }
     printf("Whole task took:  %ld us\n",(end.tv_sec-start.tv_sec)*1000000 +(end.tv_nsec-start.tv_nsec)/1000);
     
 
-    fprintf(fout,"way: %d\n",way);
-    for(int a=0;a<256;a++){
-        fprintf(fout,"color: %d, occurence %d \n",a,results[a]);
-    }
-
-    
+    // fprintf(fout,"way: %d\n",way);
+    // for(int a=0;a<256;a++){
+    //     fprintf(fout,"color: %d, occurence %d \n",a,results[a]);
+    // }
+    make_hist(fout);
 
     for(int a=0;a<height;a++){
         free(pic[a]);
     }
+
     sem_destroy(&semaf);
     fclose(fin);
     fclose(fout);
