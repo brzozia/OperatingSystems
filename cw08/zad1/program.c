@@ -7,10 +7,6 @@
 #include <time.h>
 #include <semaphore.h>
 
-
-#define SIGN 0
-#define BLOCK 1
-#define INTERLEAVED 2
 #define EOFID -1
 
 int *num;
@@ -98,8 +94,9 @@ void *pth_sign(void * strid){
         }
     }
     clock_gettime(CLOCK_REALTIME,&end);
-    long int time=(end.tv_sec-start.tv_sec)*1000000 +(end.tv_nsec-start.tv_nsec)/1000;
-    pthread_exit(&time);
+    long int *time=(long int *)calloc(1,sizeof(long int));
+    *time=(end.tv_sec-start.tv_sec)*1000000 +(end.tv_nsec-start.tv_nsec)/1000;
+    pthread_exit(time);
 }
 
 
@@ -126,8 +123,9 @@ void *pth_block(void *strid){
     }
 
     clock_gettime(CLOCK_REALTIME,&end);
-    long int time=(end.tv_sec-start.tv_sec)*1000000 +(end.tv_nsec-start.tv_nsec)/1000;
-    pthread_exit(&time);
+    long int *time=(long int *)calloc(1,sizeof(long int));
+    *time=(end.tv_sec-start.tv_sec)*1000000 +(end.tv_nsec-start.tv_nsec)/1000;
+    pthread_exit(time);
 }
 
 
@@ -148,10 +146,12 @@ void *pth_inter(void *strid){
     }
 
     clock_gettime(CLOCK_REALTIME,&end);
-   long long int time=(end.tv_sec-start.tv_sec)*1000000 +(end.tv_nsec-start.tv_nsec)/1000;
-   //printf("%lld \n",time);
-   pthread_exit(&time);
+   long int *time=(long int *)calloc(1,sizeof(long int));
+    *time=(end.tv_sec-start.tv_sec)*1000000 +(end.tv_nsec-start.tv_nsec)/1000;
+    pthread_exit(time);
+
 }
+
 int maxv(){
     int maxi=0;
     for(int i=0;i<256;i++){
@@ -196,9 +196,7 @@ int main(int argc, char ** argv){
     }
 
     int pth=atoi(argv[1]);
-    int way;
     FILE *fin=fopen(argv[3],"r");
-    FILE *fout=fopen(argv[4],"w+");
     pthread_t *pth_id=(pthread_t*)calloc(pth, sizeof(pthread_t));
     
     fseek(fin,4,SEEK_SET);              //goes over first line
@@ -221,13 +219,11 @@ int main(int argc, char ** argv){
     void *fun;
 
     if(!strcmp(argv[2],"sign")){
-        way=SIGN;
         num=divide_sign(pth);
         fun=pth_sign;
         
     }
     else if(!strcmp(argv[2],"block")){
-        way=BLOCK;
         num=divide_block(pth,fin);
         if(sem_init(&semaf,0,1)!=0)
             perror("error during creating semaphore\n");
@@ -235,7 +231,6 @@ int main(int argc, char ** argv){
         
     }
     else if(!strcmp(argv[2],"interleaved")){
-        way=INTERLEAVED;
         if(sem_init(&semaf,0,1)!=0)
             perror("error during creating semaphore\n");
         num=(int*)calloc(1,sizeof(int));
@@ -248,32 +243,37 @@ int main(int argc, char ** argv){
     }
 
 //-----makes threads-------
+    int *pid;
     for(int i=0;i<pth;i++){
-        int *pid=(int *)calloc(1,sizeof(int));
+        pid=(int *)calloc(1,sizeof(int));
         *pid=i;
         if(pthread_create(&pth_id[i],NULL,fun,(void *)pid)!=0)
             perror("error while creating thread");
     }
 
-    clock_gettime(CLOCK_REALTIME,&end);
+    
 
     void *ti;
-    long long int *tir;
-
+    long int *tir;
+    long int times[pth];
     for(int i=0;i<pth;i++){
         if(pthread_join(pth_id[i], &ti)!=0)
             perror("error occured during geting thread result");
         tir=ti;
-        printf("Thread nr %d, took %lld us\n", i,*tir);
+        times[i]=*tir;
+    }
+
+    
+    FILE *fout=fopen(argv[4],"w+");
+    make_hist(fout);
+
+
+    clock_gettime(CLOCK_REALTIME,&end);
+    for(int i=0;i<pth;i++){
+        printf("Thread nr %ld, took %ld us\n", pth_id[i],times[i]);
     }
     printf("Whole task took:  %ld us\n",(end.tv_sec-start.tv_sec)*1000000 +(end.tv_nsec-start.tv_nsec)/1000);
     
-
-    // fprintf(fout,"way: %d\n",way);
-    // for(int a=0;a<256;a++){
-    //     fprintf(fout,"color: %d, occurence %d \n",a,results[a]);
-    // }
-    make_hist(fout);
 
     for(int a=0;a<height;a++){
         free(pic[a]);
@@ -284,5 +284,7 @@ int main(int argc, char ** argv){
     fclose(fout);
     free(pth_id);
     free(pic);
+    free(ti);
+    free(pid);
     free(num);
 }

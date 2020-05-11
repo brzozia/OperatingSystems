@@ -1,0 +1,76 @@
+Number of threads: 1
+Option: sign
+Thread nr 140089577613056, took 24046 us
+Whole task took:  134435 us
+Option: block
+Thread nr 139649630607104, took 3123 us
+Whole task took:  113696 us
+Option: interleaved
+Thread nr 140668078225152, took 445 us
+Whole task took:  138496 us
+
+Number of threads: 2
+Option: sign
+Thread nr 140653668820736, took 38856 us
+Thread nr 140653660428032, took 36096 us
+Whole task took:  187835 us
+Option: block
+Thread nr 139871502857984, took 205 us
+Thread nr 139871494465280, took 1800 us
+Whole task took:  160413 us
+Option: interleaved
+Thread nr 140431300941568, took 216 us
+Thread nr 140431292548864, took 210 us
+Whole task took:  145904 us
+
+Number of threads: 4
+Option: sign
+Thread nr 139987640092416, took 29340 us
+Thread nr 139987631699712, took 33227 us
+Thread nr 139987623307008, took 40726 us
+Thread nr 139987614914304, took 41928 us
+Whole task took:  192385 us
+Option: block
+Thread nr 139668969838336, took 103 us
+Thread nr 139668961445632, took 163 us
+Thread nr 139668953052928, took 143 us
+Thread nr 139668944660224, took 112 us
+Whole task took:  152972 us
+Option: interleaved
+Thread nr 139830451316480, took 102 us
+Thread nr 139830442923776, took 914 us
+Thread nr 139830434531072, took 103 us
+Thread nr 139830426138368, took 110 us
+Whole task took:  145904 us
+
+Number of threads: 8
+Option: sign
+Thread nr 140167374137088, took 1428 us
+Thread nr 140167365744384, took 20669 us
+Thread nr 140167357351680, took 22284 us
+Thread nr 140167348958976, took 23723 us
+Thread nr 140167340566272, took 1488 us
+Thread nr 140167332173568, took 31634 us
+Thread nr 140167323780864, took 31630 us
+Thread nr 140167315388160, took 26438 us
+Whole task took:  156469 us
+Option: block
+Thread nr 140355901241088, took 47 us
+Thread nr 140355892848384, took 51 us
+Thread nr 140355884455680, took 47 us
+Thread nr 140355876062976, took 47 us
+Thread nr 140355867670272, took 47 us
+Thread nr 140355859277568, took 48 us
+Thread nr 140355850884864, took 56 us
+Thread nr 140355842492160, took 48 us
+Whole task took:  119399 us
+Option: interleaved
+Thread nr 139682005063424, took 55 us
+Thread nr 139681996670720, took 54 us
+Thread nr 139681988278016, took 54 us
+Thread nr 139681979885312, took 54 us
+Thread nr 139681971492608, took 47 us
+Thread nr 139681963099904, took 50 us
+Thread nr 139681954707200, took 60 us
+Thread nr 139681946314496, took 49 us
+Whole task took:  148357 us

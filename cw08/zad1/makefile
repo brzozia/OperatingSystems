@@ -4,15 +4,41 @@ program: program.c
 	gcc -Wall -g program.c -o program -lpthread -lrt
 
 test:
-	# ./program 8 interleaved balloons.ascii.pgm ball_inter.pgm
-	# ./program 4 sign balloons.ascii.pgm ball_sign.pgm
-	# ./program 2 block balloons.ascii.pgm ball_block.pgm
-	./program 8 interleaved casablanca.ascii.pgm casa_inter.pgm
-	./program 4 sign casablanca.ascii.pgm casa_sign.pgm
-	./program 2 block casablanca.ascii.pgm casa_block.pgm
-	# ./program 8 interleaved mountain.ascii.pgm mount_inter.pgm
-	# ./program 4 sign mountain.ascii.pgm mount_sign.pgm
-	# ./program 2 block mountain.ascii.pgm mount_block.pgm
+	echo "Number of threads: 1" > Times.txt
+	echo "Option: sign" >> Times.txt
+	./program 1 sign casablanca.ascii.pgm casa_sign.pgm >> Times.txt
+	echo "Option: block" >> Times.txt
+	./program 1 block casablanca.ascii.pgm casa_block.pgm >>Times.txt
+	echo "Option: interleaved" >> Times.txt
+	./program 1 interleaved casablanca.ascii.pgm casa_inter.pgm >>Times.txt
+
+	echo "" >>Times.txt
+	echo "Number of threads: 2" >> Times.txt
+	echo "Option: sign" >> Times.txt
+	./program 2 sign casablanca.ascii.pgm casa_sign.pgm >> Times.txt
+	echo "Option: block" >> Times.txt
+	./program 2 block casablanca.ascii.pgm casa_block.pgm >>Times.txt
+	echo "Option: interleaved" >> Times.txt
+	./program 2 interleaved casablanca.ascii.pgm casa_inter.pgm >>Times.txt
+
+	echo "" >>Times.txt
+	echo "Number of threads: 4" >> Times.txt
+	echo "Option: sign" >> Times.txt
+	./program 4 sign casablanca.ascii.pgm casa_sign.pgm >> Times.txt
+	echo "Option: block" >> Times.txt
+	./program 4 block casablanca.ascii.pgm casa_block.pgm >>Times.txt
+	echo "Option: interleaved" >> Times.txt
+	./program 4 interleaved casablanca.ascii.pgm casa_inter.pgm >>Times.txt
+
+	echo "" >>Times.txt
+	echo "Number of threads: 8" >> Times.txt
+	echo "Option: sign" >> Times.txt
+	./program 8 sign casablanca.ascii.pgm casa_sign.pgm >> Times.txt
+	echo "Option: block" >> Times.txt
+	./program 8 block casablanca.ascii.pgm casa_block.pgm >>Times.txt
+	echo "Option: interleaved" >> Times.txt
+	./program 8 interleaved casablanca.ascii.pgm casa_inter.pgm >>Times.txt
+
 
 clean: 
 	rm -f program
