@@ -8,8 +8,8 @@ struct queue{
     int *chairs;
     int occ_chairs; //occupied chairs
     int eque; //index of 'last' occupied chair
-    int sque; //index of 'last' first occupied chair 
-    int is_sleep;
+    int sque; //index of  'first' occupied chair 
+    int is_sleep; //if 0 - golibroda is not sleeping, if 1 - he is sleeping
 };
 
 struct queue que;
@@ -31,16 +31,17 @@ void *golibroda(){
         if(que.occ_chairs>0){
             if(que.sque==k)
                 que.sque=0;
-            printf("Golibroda: czeka %d klientow\n",que.occ_chairs);
+            printf("Golibroda: czeka %d klientow\n",que.occ_chairs); //number of all waiting clients-including client whose hair is going to be cut; 
             printf("Golibroda: gole klienta %d\n",que.chairs[que.sque++]);
             que.occ_chairs--;
             pthread_mutex_unlock(&queue_mut);
-            int s=rand()%7;
+            int s=rand()%10;
             sleep(s);
             cli++;
         }else{
             que.is_sleep++;
             pthread_mutex_unlock(&queue_mut);
+            printf("Golibroda: ide spac\n");
         }       
 
     }
@@ -49,14 +50,15 @@ void *golibroda(){
 
 void *client(void * sid){
     int id=*(int *)sid;
-    int h;
 
     while(1){
         pthread_mutex_lock(&queue_mut);
-        h=que.occ_chairs;
-        pthread_mutex_unlock(&queue_mut);
-        if(h!=k)
+        if(que.occ_chairs!=k || que.is_sleep==1){
+            pthread_mutex_unlock(&queue_mut);
             break;
+        }
+        pthread_mutex_unlock(&queue_mut);
+        
         printf("Zajete; %d\n",id);
         int s=rand()%5;
         sleep(s);
