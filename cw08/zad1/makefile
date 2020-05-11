@@ -1,7 +1,7 @@
 all: program
 
 program: program.c
-	gcc -Wall -g program.c -o program -lpthread -lrt
+	gcc -Wall -g program.c -o program -lpthread
 
 test:
 	echo "Number of threads: 1" > Times.txt

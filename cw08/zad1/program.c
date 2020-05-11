@@ -7,7 +7,7 @@
 #include <time.h>
 #include <semaphore.h>
 
-#define EOFID -1
+#define EOFID -2
 
 int *num;
 int results[256];
@@ -164,10 +164,10 @@ int maxv(){
 void make_hist(FILE *fout){
     int maxi=maxv();
     fprintf(fout,"P2 \n%d %d \n255 \n",256*10,maxi);
-    for(int i=maxi;i>=0;i--){
+    for(int i=maxi+2;i>0;i--){
         for(int a=0;a<256;a++){
             int c=0;
-            if(a<125){
+            if(a<127){
                 c=255;
             }
             if(results[a]<i)
@@ -177,7 +177,6 @@ void make_hist(FILE *fout){
                 fprintf(fout, "%d %d %d %d %d %d %d %d %d %d ",a,a,a,a,a,a,a,a,a,a);
             }
             
-            //fprintf(fout,"color: %d, occurence %d \n",a,results[a]);
         }
         fprintf(fout,"\n");
     }
@@ -199,35 +198,38 @@ int main(int argc, char ** argv){
     FILE *fin=fopen(argv[3],"r");
     pthread_t *pth_id=(pthread_t*)calloc(pth, sizeof(pthread_t));
     
-    fseek(fin,4,SEEK_SET);              //goes over first line
+    take_num(fin);             //goes over first line
     width=take_num(fin);
     height=take_num(fin);
     take_num(fin);                      //goes over third line
     
     pic=(int**)calloc(height,sizeof(int*));
-
-    for(int a=0;a<height;a++){
+    int a,b;
+    for( a=0;a<height;a++){
         pic[a]=(int*)calloc(width,sizeof(int));
-        for(int b=0;b<width;b++){
+        for( b=0;b<width;b++){
             int p=take_num(fin);
-            pic[a][b]=p;
+            if(p==-2)
+                break;
             if(p==-1)
                 b--;
+            else
+                pic[a][b]=p;
         }
     }
     
-    void *fun;
+    void * fun;
 
     if(!strcmp(argv[2],"sign")){
         num=divide_sign(pth);
-        fun=pth_sign;
+        fun=&pth_sign;
         
     }
     else if(!strcmp(argv[2],"block")){
         num=divide_block(pth,fin);
         if(sem_init(&semaf,0,1)!=0)
             perror("error during creating semaphore\n");
-        fun=pth_block;
+        fun=&pth_block;
         
     }
     else if(!strcmp(argv[2],"interleaved")){
@@ -235,7 +237,7 @@ int main(int argc, char ** argv){
             perror("error during creating semaphore\n");
         num=(int*)calloc(1,sizeof(int));
         *num=pth;
-        fun=pth_inter;
+        fun=&pth_inter;
     }
     else{
         printf("wrong second argument\n");

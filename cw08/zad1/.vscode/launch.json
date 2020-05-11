@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${fileDirname}/${fileBasenameNoExtension}",
-            "args": ["1","sign","mountain.ascii.pgm","histogram"],
+            "args": ["1","sign","baboon.ascii.pgm","casa_sign"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
