@@ -1,5 +1,30 @@
 #include "common.h"
 
+int game[3][3];
+int my_sign;
+
+
+void print_game(){
+    for(int i=0;i<3;i++){
+        char line[6];
+        int p=0;
+        for(int j=0;j<3;j++){
+            int sign = game[i][j];
+
+            if(sign==-1)
+                line[p]='_';
+            else if(sign==X)
+                line[p]='X';
+            else
+                line[p]='O';
+
+            line[++p]=' ';
+            p++;
+        }
+        printf("%s\n",line);
+    }
+}
+
 int make_socket_net(char *arg){
     int portno;
     sscanf(arg, "%d", &portno);
@@ -34,9 +59,32 @@ int make_socket_local(char *arg){
     return undesc;
 }
 
+/////////////////////
 
+void clear_game(){
+    for(int i=0;i<3;i++){
+        for(int j=0;j<3;j++)
+            game[i][j]=-1;
+    }
+}
 
+int do_move(int cell, int game_id){
 
+    int col=-1,row=0;
+
+    while(cell>0){
+        col++;
+        cell--;
+
+        if(col==3){
+            col=0;
+            row++;
+        }
+    }
+
+    game[row][col]=my_sign;
+    return 0;
+}
 
 
 
@@ -51,15 +99,24 @@ int main(int argc, char ** argv){
     int serverdesc;
 
     if(strcmp(argv[2],"network")==0){
-        
         int serverdesc = make_socket_net(argv[1]);
     }
     else if(strcmp(argv[2], "local")==0){
-        
         int serverdesc = make_socket_local(argv[2]);
     }
     else{
         perror("client: wrong connection type");
     }
+
+
+    //name itd
+
+    send
+
+    while(1){
+
+    }
+    clear_game();
+    print_game();
 
 }   
