@@ -7,6 +7,8 @@
 #include <sys/types.h>
 #include <string.h>
 #include <sys/epoll.h>
+#include <arpa/inet.h>
+#include <signal.h>
 
 #define O 0
 #define X 1
@@ -16,18 +18,23 @@
 #define DISCONNECT 5
 #define CONNECT 6
 #define CANNOT_MOVE_THERE 7
-#define IN_USE 8
+#define GIVE_NAME 8
 #define FREE 9
+#define WINNER 10
+#define NOT_WINNER 11
 #define ERROR -1
+#define CTRLC 12
+#define REMIS 13
 
-// struct game{
-//     int matrix[3][3];
-//     int in_use;
-// };
+#define MAX_CLIENTS 14
+#define UNIX_PATH_MAX  108
+
 
 struct message{
     char name[32];
     int msg;
     int type;
+    int other;
 };
 
+int msg_size = sizeof(struct message);
