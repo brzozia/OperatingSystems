@@ -103,12 +103,6 @@ int check_winner(){
 
 void disconnect(){
     printf("disconnect with server\n");
-    
-    // if(shutdown(serverdesc, SHUT_RDWR)==-1)
-    //     perror("server: shutdown socket error");
-
-    // if(close(serverdesc)==-1)
-    //     perror("server: close socket error");
 
     exit(0);
 }

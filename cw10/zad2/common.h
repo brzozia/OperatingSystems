@@ -31,7 +31,7 @@
 
 
 
-#define MAX_CLIENTS 14
+#define MAX_CLIENTS 3
 #define UNIX_PATH_MAX  108
 
 

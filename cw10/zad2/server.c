@@ -78,10 +78,6 @@ void exit_handler(void){
             
             msg.type=DISCONNECT;
             sendto(clients[i].socket_type, &msg, msg_size,0,&clients[i].desc, sizeof(clients[i].desc));
-            // recvfrom(clients[i].socket_type,&msg,msg_size,0,NULL,NULL);
-
-            // if(close(clients[i].socket_type)==-1)
-            //     perror("server: close socket error");
         }
     }
 
@@ -257,33 +253,38 @@ int main(int argc, char ** argv){
                 if(add_client(new_client)==ERROR){
                     printf("cannot add client - array full\n");
                     msg2.msg=ERROR;
+                    msg2.type=GIVE_NAME;
+                    if(sendto(new_client.socket_type,&msg2, msg_size,0,&new_client.desc, sizeof(new_client.desc))==-1)
+                        perror("server: send error arary for player error");
+                        
                 }                
-                
-                if(second_client == ERROR){
-                    
-                    msg.msg=WAITING_FOR_PLAYER;
-                    msg.type=CONNECT;
-                    if(sendto(new_client.socket_type,&msg, msg_size,0,&new_client.desc, sizeof(new_client.desc))==-1)
-                        perror("server: send waiting for player error");
-
-                }
                 else{
-                    int client_id=find_client_using_name(new_client.name);
-                    clients[second_client].playing_with=client_id;
-                    clients[client_id].playing_with=second_client;
-                    msg.other = rand() % 1;
+                    if(second_client == ERROR){
+                        
+                        msg.msg=WAITING_FOR_PLAYER;
+                        msg.type=CONNECT;
+                        if(sendto(new_client.socket_type,&msg, msg_size,0,&new_client.desc, sizeof(new_client.desc))==-1)
+                            perror("server: send waiting for player error");
 
-                    strcpy(msg.name,clients[second_client].name);
-                    msg.msg=O;
-                    msg.type=CONNECT;
-                    if(sendto(clients[client_id].socket_type,&msg, msg_size,0,&clients[client_id].desc, sizeof(clients[client_id].desc))==-1)
-                        perror("server: send info 1 error");
-                    
-                    strcpy(msg.name,clients[client_id].name);
-                    msg.msg=X;
-                    if(sendto(clients[second_client].socket_type,&msg, msg_size,0,&clients[second_client].desc, sizeof(clients[second_client].desc))==-1)
-                        perror("server: send info 2 error");
-                }   
+                    }
+                    else{
+                        int client_id=find_client_using_name(new_client.name);
+                        clients[second_client].playing_with=client_id;
+                        clients[client_id].playing_with=second_client;
+                        msg.other = rand() % 1;
+
+                        strcpy(msg.name,clients[second_client].name);
+                        msg.msg=O;
+                        msg.type=CONNECT;
+                        if(sendto(clients[client_id].socket_type,&msg, msg_size,0,&clients[client_id].desc, sizeof(clients[client_id].desc))==-1)
+                            perror("server: send info 1 error");
+                        
+                        strcpy(msg.name,clients[client_id].name);
+                        msg.msg=X;
+                        if(sendto(clients[second_client].socket_type,&msg, msg_size,0,&clients[second_client].desc, sizeof(clients[second_client].desc))==-1)
+                            perror("server: send info 2 error");
+                    } 
+                }  
 
             }
             else{
