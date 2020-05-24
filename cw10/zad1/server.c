@@ -1,11 +1,13 @@
 #include "common.h"
 
+sem_t semaf;
+
 struct client_info{
     char name[32];
     int desc;
     int playing_with;
     int is_working;
-    int sign;
+    int ping;
 };
 
 struct client_info *clients;
@@ -14,11 +16,11 @@ int undesc;
 int netdesc;
 int epoldesc;
 char path[10];
+pthread_t pthread_id;
 
 
 
 int add_client(struct client_info client){
-
     if(fill<MAX_CLIENTS){
         clients[fill++]=client;
         return 0;
@@ -59,10 +61,15 @@ int find_free_client(int desc){
     }
     return ERROR;
 }
+void sig_handler(int num){
+    exit(0);
+}
 
-void sig_handler(int signum){
+void exit_handler(void){
     printf("closing server\n");
     struct message msg;
+
+    pthread_cancel(pthread_id);
 
     for(int i=0;i<MAX_CLIENTS;i++){
         if(clients[i].is_working==CONNECT){
@@ -84,17 +91,17 @@ void sig_handler(int signum){
 
     if(shutdown(netdesc, SHUT_RDWR)==-1)
         perror("server: shutdown socket error");
-    
+    sem_destroy(&semaf);
     close(netdesc);
     close(undesc);
     unlink(path);
     free(clients);
-    exit(0);
+    // free(pthread_id);
 }
 
 
 void unexpected_client_exit(int connected_client){
-     struct message msg1;
+    struct message msg1;
     msg1.msg=WAITING_FOR_PLAYER;
     msg1.type=CONNECT;
     msg1.other=ERROR;
@@ -102,6 +109,60 @@ void unexpected_client_exit(int connected_client){
         perror("server: send waiting for player error");
 
 }
+
+
+void disconnect_client(int i){
+    
+    struct epoll_event epv;
+    epv.data.fd=clients[i].desc;
+    if(epoll_ctl(epoldesc,EPOLL_CTL_DEL,clients[i].desc,&epv)==-1)
+        perror("server: epoll unix ctl error");
+    
+    if(shutdown(clients[i].desc, SHUT_RDWR)==-1)
+        perror("server: shutdown socket error");
+
+    if(close(clients[i].desc)==-1)
+        perror("server: close socket error");
+
+}
+
+void *pingping(int arg){
+    struct message msg1;
+    msg1.type=PING;
+
+    while(1){
+
+        for(int i=0;i<MAX_CLIENTS;i++){
+
+            sem_wait(&semaf);
+            if(clients[i].is_working==CONNECT){
+
+                if(clients[i].ping==0){
+                    clients[i].ping=1;
+                    if(write(clients[i].desc, &msg1, msg_size)==-1)
+                    perror("server: send waiting for player error");
+                }
+                else{
+                    clients[i].is_working=DISCONNECT;
+
+                    int connected_client = clients[i].playing_with;
+                    if(connected_client !=-1){
+                        clients[i].playing_with=-1;
+                        
+                        if(clients[i].is_working==CONNECT){ //
+                            unexpected_client_exit(i);  
+                        }
+                    }
+
+                    disconnect_client(i);
+                }
+            }
+            sem_post(&semaf);
+            sleep(2);
+        }   
+    }
+}
+
 
 //================================== m a i n ==================
 
@@ -112,6 +173,7 @@ int main(int argc, char ** argv){
     }
     
     signal(SIGINT,sig_handler);
+    atexit(exit_handler);
 
     // sockety ===========================
 
@@ -123,7 +185,8 @@ int main(int argc, char ** argv){
     netaddr.sin_port = htons(portno);
     struct in_addr inaddr;
     inet_pton(AF_INET,"127.0.0.1",&inaddr);
-    netaddr.sin_port = inaddr.s_addr;
+    netaddr.sin_addr = inaddr;
+
 
     struct sockaddr_un unixaddr;
     unixaddr.sun_family=AF_UNIX;
@@ -156,8 +219,8 @@ int main(int argc, char ** argv){
     
 
     struct epoll_event epoll_ev,epoll_ev2;
-    epoll_ev.events=EPOLLIN | EPOLLOUT;
-    epoll_ev2.events=EPOLLIN | EPOLLOUT;
+    epoll_ev.events=EPOLLIN ;
+    epoll_ev2.events=EPOLLIN ;
     union epoll_data epoll_da,epoll_da2;
     epoll_da.fd=undesc;
     epoll_ev.data=epoll_da;
@@ -171,6 +234,8 @@ int main(int argc, char ** argv){
         perror("server: epoll net ctl error");
 
 
+    
+
 
 
 // main loop ==========================================================
@@ -178,6 +243,12 @@ int main(int argc, char ** argv){
     clients = (struct client_info *)calloc(MAX_CLIENTS, sizeof(struct client_info));
     struct message received;
     fill=0;
+
+    // pthreads ============================
+    sem_init(&semaf,0,1);
+    pthread_create(&pthread_id,NULL,(void *)pingping,0);
+    pthread_detach(pthread_id);
+
 
 
     struct epoll_event event;
@@ -192,20 +263,24 @@ int main(int argc, char ** argv){
                 perror("server: accept connection error");
             
             struct epoll_event epoll_cli;
-            epoll_cli.events=EPOLLIN | EPOLLOUT ;
+            epoll_cli.events=EPOLLIN  ;
             epoll_cli.data.fd=client_desc;
             if(epoll_ctl(epoldesc,EPOLL_CTL_ADD,client_desc,&epoll_cli)==-1)
                 perror("server: epoll client ctl error");
             
             struct client_info new_client;
             struct message msg2;
+            strcpy(new_client.name,"");
             new_client.desc=client_desc;
             new_client.is_working=CONNECT;
             new_client.playing_with=-1;
+            new_client.ping=0;
+            sem_wait(&semaf);
             if(add_client(new_client)==ERROR){
                 printf("cannot add client - array full\n");
                 msg2.msg=ERROR;
-            }            
+            } 
+            sem_post(&semaf);           
             
             msg2.type=GIVE_NAME;
             if(write(client_desc,&msg2, msg_size)==-1)
@@ -220,6 +295,7 @@ int main(int argc, char ** argv){
     // CONNECT
             if(received.type==CONNECT){
 
+                sem_wait(&semaf);
                 int client_id = find_client_using_desc(event.data.fd);
                 struct message msg;
 
@@ -229,7 +305,7 @@ int main(int argc, char ** argv){
                     int second_client = find_free_client(event.data.fd);
                     
                     if(second_client == ERROR){
-
+                        
                         msg.msg=WAITING_FOR_PLAYER;
                         msg.type=CONNECT;
                         if(write(clients[client_id].desc,&msg, msg_size)==-1)
@@ -262,17 +338,18 @@ int main(int argc, char ** argv){
                         perror("server: send name in use error");
                 }
                 received.type=-1;
+                sem_post(&semaf);
                     
 
             }
     // DISCONNECT        
             else if(received.type==DISCONNECT){
+                sem_wait(&semaf);
                 int from_client = find_client_using_name(received.name);
                 clients[from_client].is_working=DISCONNECT;
 
-                printf("%d \n",from_client);
+
                 int connected_client = clients[from_client].playing_with;
-                printf("%d\n",connected_client);
                 if(connected_client !=-1){
                     clients[connected_client].playing_with=-1;
                     
@@ -281,28 +358,18 @@ int main(int argc, char ** argv){
                     }
                 }
                 
-
-                printf("found\n");
-
-                struct epoll_event epv;
-                epv.data.fd=clients[from_client].desc;
-                if(epoll_ctl(epoldesc,EPOLL_CTL_DEL,clients[from_client].desc,&epv)==-1)
-                    perror("server: epoll unix ctl error");
-                
-                if(shutdown(clients[from_client].desc, SHUT_RDWR)==-1)
-                    perror("server: shutdown socket error");
-
-                if(close(clients[from_client].desc)==-1)
-                    perror("server: close socket error");
-
+                disconnect_client(from_client);
+                sem_post(&semaf);
                 received.type=-1;
+
             }
     // MOVE        
             else if(received.type==MOVE){
-
+                
+                sem_wait(&semaf);
                 int from_client = find_client_using_name(received.name);
                 if(from_client==-1)
-                    printf("find name\n");
+                    printf("server: find name error\n");
 
                 int to_client = clients[from_client].playing_with;
                 if(to_client!=-1){
@@ -314,13 +381,16 @@ int main(int argc, char ** argv){
                     if(write(clients[to_client].desc,&msg, msg_size)==-1)
                         perror("server: send move error");
                 }
+                sem_post(&semaf);
                 received.type=-1;
 
             }
-    
-          
+            else if(received.type==PING){
+                sem_wait(&semaf);
+                int from_client = find_client_using_name(received.name);
+                clients[from_client].ping=0;
+                sem_post(&semaf);
+            }
         } 
-        
     }    
-
 }

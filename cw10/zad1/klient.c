@@ -6,6 +6,7 @@ char name[32];
 int my_sign;
 int not_my_sign;
 int serverdesc;
+int epoldesc;
 char path[248];
 
 
@@ -17,8 +18,9 @@ int make_socket_net(char *arg){
     netaddr.sin_port = htons(portno);
     struct in_addr inaddr;
     inet_pton(AF_INET,"127.0.0.1",&inaddr);
-    netaddr.sin_port = inaddr.s_addr;
+    netaddr.sin_addr = inaddr;
 
+    
     int netdesc = socket(AF_INET, SOCK_STREAM,0);
     if(netdesc ==-1)
         perror("client: make socket inet");
@@ -31,8 +33,6 @@ int make_socket_net(char *arg){
 }
 
 int make_socket_local(char *arg){
-    // getcwd(path,248);
-    // strcat(path,"/");
     strcpy(path,arg);
 
     struct sockaddr_un unixaddr;
@@ -107,7 +107,6 @@ void disconnect(){
     if(close(serverdesc)==-1)
         perror("server: close socket error");
 
-    // unlink(path);
     exit(0);
 }
 
@@ -143,11 +142,58 @@ int write_move(int cell, int sign){
 }
 
 
+void ping_fun(){
+    struct message msg4;
+    msg4.type=PING;
+    strcpy(msg4.name,name);
+    write(serverdesc,&msg4,msg_size);
+}
+
+void disconnect_fun(){
+    struct message msg3;
+    msg3.type=DISCONNECT;
+    strcpy(msg3.name,name);
+    write(serverdesc,&msg3,msg_size);
+    disconnect();
+}
+
 void do_move(int serverdesc){
     print_game();
     printf("Your move. Choose number from 1 to 9.\n");
+
     int move;
+    struct message msg,received;
+    struct epoll_event event;
+
+
+    while(1){
+        epoll_wait(epoldesc,&event,1,-1);
+
+        if(event.data.fd==serverdesc){
+
+            read(serverdesc,&received,msg_size);
+            if(received.type==PING){
+               ping_fun();
+            }
+            else if(received.type==DISCONNECT){
+                disconnect_fun();
+            }
+            else if(received.type==CONNECT && received.msg==WAITING_FOR_PLAYER){
+                if(received.other==ERROR){
+                    printf("Second player has left the game.\n");
+                }
+                printf("Waiting for other player...\n");
+                return;
+            }
+        }
+        if(event.data.fd==STDIN_FILENO)
+            break;
+    }
+
+
     scanf("%d",&move);
+    
+
     if(move>9 || move <1 || write_move(move,my_sign) == ERROR){
         printf("Wrong cell number. You have lost your turn\n");
         move = ERROR;
@@ -155,7 +201,6 @@ void do_move(int serverdesc){
     print_game();
     place++;
 
-    struct message msg;
     strcpy(msg.name,name);
     msg.type=MOVE;
     msg.msg=move;
@@ -221,12 +266,37 @@ int main(int argc, char ** argv){
         return 1;
     }
 
+    epoldesc = epoll_create1(0);
+    if(epoldesc==-1)
+        perror("server: epol create error");
+    
+
+    struct epoll_event epoll_ev,epoll_ev2;
+    epoll_ev.events=EPOLLIN ;
+    epoll_ev2.events=EPOLLIN ;
+    union epoll_data epoll_da,epoll_da2;
+    epoll_da.fd=serverdesc;
+    epoll_ev.data=epoll_da;
+    
+    if(epoll_ctl(epoldesc,EPOLL_CTL_ADD,serverdesc,&epoll_ev)==-1)
+        perror("server: epoll unix ctl error");
+
+    epoll_da2.fd=STDIN_FILENO;
+    epoll_ev2.data=epoll_da2;
+    if(epoll_ctl(epoldesc,EPOLL_CTL_ADD,STDIN_FILENO,&epoll_ev2)==-1)
+        perror("server: epoll net ctl error");
 
     struct message received;
     received.type=-1;
+
+
 //============================================================
     while(1){
         int rcv_status = read(serverdesc,&received,msg_size);
+
+        if(rcv_status==0){
+            disconnect();
+        }
 
         if(received.type==GIVE_NAME){
             if(received.msg==ERROR){
@@ -279,6 +349,7 @@ int main(int argc, char ** argv){
                     }
                     
                 }
+                received.type=-1;
             }
         }
         else if(received.type==MOVE){
@@ -308,10 +379,11 @@ int main(int argc, char ** argv){
                 do_move(serverdesc);
         }
         else if(received.type==DISCONNECT){
-            struct message msg3;
-            msg3.type=DISCONNECT;
-            write(serverdesc,&msg3,msg_size);
-            disconnect();
+            disconnect_fun();
+        }
+        else if(received.type==PING){
+            ping_fun();
         }
     }
 }   
+

@@ -9,11 +9,13 @@
 #include <sys/epoll.h>
 #include <arpa/inet.h>
 #include <signal.h>
+#include <pthread.h>
+#include <semaphore.h>
 
 #define O 0
 #define X 1
 #define WAITING_FOR_PLAYER 2
-#define CONNECTED_WITH_PLAYER 3
+#define PING 3
 #define MOVE 4
 #define DISCONNECT 5
 #define CONNECT 6
@@ -25,6 +27,7 @@
 #define ERROR -1
 #define CTRLC 12
 #define REMIS 13
+
 
 #define MAX_CLIENTS 14
 #define UNIX_PATH_MAX  108
