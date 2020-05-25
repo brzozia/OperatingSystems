@@ -7,7 +7,8 @@ int my_sign;
 int not_my_sign;
 int serverdesc;
 int epoldesc;
-char path[248];
+char path[108];
+char my_path[108];
 
 
 int make_socket_net(char *arg){
@@ -35,21 +36,26 @@ int make_socket_net(char *arg){
 int make_socket_local(char *arg){
     strcpy(path,arg);
 
-    struct sockaddr_un unixaddr;
+    struct sockaddr_un unixaddr,serveraddr;
     unixaddr.sun_family=AF_UNIX;
-    strcpy(unixaddr.sun_path,path);
+
+    serveraddr.sun_family=AF_UNIX;
+    strcpy(serveraddr.sun_path,path);
+
+    sprintf(my_path,"%d",getpid());
+    strcpy(unixaddr.sun_path,my_path);
 
     int undesc = socket(AF_UNIX, SOCK_DGRAM ,0);
     if(undesc==-1)
         perror("client: make socket unix");
     
-    if(bind(undesc, (struct sockaddr *) &unixaddr, sizeof(sa_family_t))==-1)
+    if(bind(undesc, (struct sockaddr *) &unixaddr, sizeof(unixaddr))==-1)
         perror("client: bind socket unix");
     
-    int connect_status = connect(undesc, (struct sockaddr *)&unixaddr, sizeof(unixaddr));
-    if(connect_status == -1)
-    perror("client: connect local error");
-    
+    int connect_status = connect(undesc, (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+        if(connect_status == -1)
+        perror("client: connect local error");
+
     return undesc;
 }
 
@@ -103,7 +109,7 @@ int check_winner(){
 
 void disconnect(){
     printf("disconnect with server\n");
-
+    unlink(my_path);
     exit(0);
 }
 

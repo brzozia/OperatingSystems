@@ -69,7 +69,6 @@ void sig_handler(int num){
 void exit_handler(void){
     printf("closing server\n");
     struct message msg;
-    struct sockaddr sock_addr;
 
     pthread_cancel(pthread_id);
 
@@ -89,14 +88,50 @@ void exit_handler(void){
 }
 
 
+
+void connect_procedure(char *name, int client_id){
+
+    int second_client = find_free_client(name);
+    struct message msg;
+
+    if(second_client == ERROR){
+        
+        msg.msg=WAITING_FOR_PLAYER;
+        msg.type=CONNECT;
+        if(sendto(clients[client_id].socket_type,&msg, msg_size,0,&clients[client_id].desc, sizeof(clients[client_id].desc))==-1)
+            perror("server: send waiting for player error");
+
+    }
+    else{
+        
+        clients[second_client].playing_with=client_id;
+        clients[client_id].playing_with=second_client;
+        msg.other = rand() % 1;
+
+        strcpy(msg.name,clients[second_client].name);
+        msg.msg=O;
+        msg.type=CONNECT;
+        if(sendto(clients[client_id].socket_type,&msg, msg_size,0,&clients[client_id].desc, sizeof(clients[client_id].desc))==-1)
+            perror("server: send info 1 error");
+        
+        strcpy(msg.name,clients[client_id].name);
+        msg.msg=X;
+        if(sendto(clients[second_client].socket_type,&msg, msg_size,0,&clients[second_client].desc, sizeof(clients[second_client].desc))==-1)
+            perror("server: send info 2 error");
+    } 
+
+}
+
+
 void unexpected_client_exit(int connected_client){
-    struct message msg1;
-    struct sockaddr sock_addr;
-    msg1.msg=WAITING_FOR_PLAYER;
-    msg1.type=CONNECT;
-    msg1.other=ERROR;
-    if(sendto(clients[connected_client].socket_type, &msg1, msg_size,0,&clients[connected_client].desc, sizeof(clients[connected_client].desc))==-1)
-        perror("server: send waiting for player error");
+    connect_procedure(clients[connected_client].name, connected_client);
+    
+    // struct message msg1;
+    // msg1.msg=WAITING_FOR_PLAYER;
+    // msg1.type=CONNECT;
+    // msg1.other=ERROR;
+    // if(sendto(clients[connected_client].socket_type, &msg1, msg_size,0,&clients[connected_client].desc, sizeof(clients[connected_client].desc))==-1)
+    //     perror("server: send waiting for player error");
 
 }
 
@@ -104,7 +139,6 @@ void unexpected_client_exit(int connected_client){
 
 void *pingping(int arg){
     struct message msg1;
-    struct sockaddr sock_addr;
     msg1.type=PING;
 
     while(1){
@@ -137,6 +171,8 @@ void *pingping(int arg){
         }   
     }
 }
+
+
 
 
 //================================== m a i n ==================
@@ -309,34 +345,8 @@ int main(int argc, char ** argv){
 
             if(find_client_using_name(received.name) == ERROR){
                 strcpy(clients[client_id].name,received.name);
-
-                int second_client = find_free_client(received.name);
                 
-                if(second_client == ERROR){
-                    
-                    msg.msg=WAITING_FOR_PLAYER;
-                    msg.type=CONNECT;
-                    if(sendto(clients[client_id].socket_type,&msg, msg_size,0,&clients[client_id].desc, sizeof(clients[client_id].desc))==-1)
-                        perror("server: send waiting for player error");
-
-                }
-                else{
-                    
-                    clients[second_client].playing_with=client_id;
-                    clients[client_id].playing_with=second_client;
-                    msg.other = rand() % 1;
-
-                    strcpy(msg.name,clients[second_client].name);
-                    msg.msg=O;
-                    msg.type=CONNECT;
-                    if(sendto(clients[client_id].socket_type,&msg, msg_size,0,&clients[client_id].desc, sizeof(clients[client_id].desc))==-1)
-                        perror("server: send info 1 error");
-                    
-                    strcpy(msg.name,clients[client_id].name);
-                    msg.msg=X;
-                    if(sendto(clients[second_client].socket_type,&msg, msg_size,0,&clients[second_client].desc, sizeof(clients[second_client].desc))==-1)
-                        perror("server: send info 2 error");
-                }   
+                connect_procedure(received.name,client_id);                  
 
             }
             else{
