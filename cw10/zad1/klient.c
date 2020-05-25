@@ -7,7 +7,7 @@ int my_sign;
 int not_my_sign;
 int serverdesc;
 int epoldesc;
-char path[248];
+char path[108];
 
 
 int make_socket_net(char *arg){
@@ -26,8 +26,10 @@ int make_socket_net(char *arg){
         perror("client: make socket inet");
     
     int connect_status = connect(netdesc, (struct sockaddr *)&netaddr, sizeof(netaddr));
-    if(connect_status == -1)
-    perror("client: connect network error");
+    if(connect_status == -1){
+        perror("client: connect network error");
+        exit(-1);
+    }
 
     return netdesc;
 }
@@ -44,8 +46,10 @@ int make_socket_local(char *arg){
         perror("client: make socket unix");
     
     int connect_status = connect(undesc, (struct sockaddr *)&unixaddr, sizeof(unixaddr));
-    if(connect_status == -1)
-    perror("client: connect local error");
+    if(connect_status == -1){
+        perror("client: connect local error");
+        exit(-1);
+    }
     
     return undesc;
 }
@@ -288,7 +292,6 @@ int main(int argc, char ** argv){
 
     struct message received;
     received.type=-1;
-
 
 //============================================================
     while(1){

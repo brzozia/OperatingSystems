@@ -89,52 +89,57 @@ void exit_handler(void){
 
 
 
-void connect_procedure(char *name, int client_id){
+void connect_procedure(char *name, int client_id, int second_client){
 
-    int second_client = find_free_client(name);
     struct message msg;
+    clients[second_client].playing_with=client_id;
+    clients[client_id].playing_with=second_client;
+    msg.other = rand() % 1;
 
-    if(second_client == ERROR){
-        
-        msg.msg=WAITING_FOR_PLAYER;
-        msg.type=CONNECT;
-        if(sendto(clients[client_id].socket_type,&msg, msg_size,0,&clients[client_id].desc, sizeof(clients[client_id].desc))==-1)
-            perror("server: send waiting for player error");
-
-    }
-    else{
-        
-        clients[second_client].playing_with=client_id;
-        clients[client_id].playing_with=second_client;
-        msg.other = rand() % 1;
-
-        strcpy(msg.name,clients[second_client].name);
-        msg.msg=O;
-        msg.type=CONNECT;
-        if(sendto(clients[client_id].socket_type,&msg, msg_size,0,&clients[client_id].desc, sizeof(clients[client_id].desc))==-1)
-            perror("server: send info 1 error");
-        
-        strcpy(msg.name,clients[client_id].name);
-        msg.msg=X;
-        if(sendto(clients[second_client].socket_type,&msg, msg_size,0,&clients[second_client].desc, sizeof(clients[second_client].desc))==-1)
-            perror("server: send info 2 error");
-    } 
+    strcpy(msg.name,clients[second_client].name);
+    msg.msg=O;
+    msg.type=CONNECT;
+    if(sendto(clients[client_id].socket_type,&msg, msg_size,0,&clients[client_id].desc, sizeof(clients[client_id].desc))==-1)
+        perror("server: send info 1 error");
+    
+    strcpy(msg.name,clients[client_id].name);
+    msg.msg=X;
+    if(sendto(clients[second_client].socket_type,&msg, msg_size,0,&clients[second_client].desc, sizeof(clients[second_client].desc))==-1)
+        perror("server: send info 2 error");
+    
 
 }
 
 
 void unexpected_client_exit(int connected_client){
-    connect_procedure(clients[connected_client].name, connected_client);
     
-    // struct message msg1;
-    // msg1.msg=WAITING_FOR_PLAYER;
-    // msg1.type=CONNECT;
-    // msg1.other=ERROR;
-    // if(sendto(clients[connected_client].socket_type, &msg1, msg_size,0,&clients[connected_client].desc, sizeof(clients[connected_client].desc))==-1)
-    //     perror("server: send waiting for player error");
+    struct message msg1;
+    msg1.msg=WAITING_FOR_PLAYER;
+    msg1.type=CONNECT;
+    msg1.other=ERROR;
+    if(sendto(clients[connected_client].socket_type, &msg1, msg_size,0,&clients[connected_client].desc, sizeof(clients[connected_client].desc))==-1)
+        perror("server: unexpected send waiting for player error");
+    
+
+    int second_client = find_free_client(clients[connected_client].name);
+
+    if(second_client != ERROR)
+        connect_procedure(clients[connected_client].name, connected_client,second_client);
 
 }
 
+void disconnect_ping(int i){
+    clients[i].is_working=DISCONNECT;
+
+    int connected_client = clients[i].playing_with;
+    if(connected_client !=-1){
+        clients[connected_client].playing_with=-1;
+        
+        if(clients[connected_client].is_working==CONNECT){ 
+            unexpected_client_exit(connected_client);  
+        }
+    }
+}
 
 
 void *pingping(int arg){
@@ -150,24 +155,19 @@ void *pingping(int arg){
 
                 if(clients[i].ping==0){
                     clients[i].ping=1;
-                    if(sendto(clients[i].socket_type, &msg1, msg_size,0,&clients[i].desc, sizeof(clients[i].desc))==-1)
-                    perror("server: send waiting for player error");
+                    if(sendto(clients[i].socket_type, &msg1, msg_size,0,&clients[i].desc, sizeof(clients[i].desc))==-1){
+                        if(errno==ECONNREFUSED)
+                            disconnect_ping(i);
+                        else 
+                            perror("server: sendto ping error");
+                    }
                 }
                 else{
-                    clients[i].is_working=DISCONNECT;
-
-                    int connected_client = clients[i].playing_with;
-                    if(connected_client !=-1){
-                        clients[i].playing_with=-1;
-                        
-                        if(clients[i].is_working==CONNECT){ //
-                            unexpected_client_exit(i);  
-                        }
-                    }
+                    disconnect_ping(i);
                 }
             }
             sem_post(&semaf);
-            sleep(2);
+            sleep(1);
         }   
     }
 }
@@ -344,9 +344,21 @@ int main(int argc, char ** argv){
             struct message msg;
 
             if(find_client_using_name(received.name) == ERROR){
+
                 strcpy(clients[client_id].name,received.name);
-                
-                connect_procedure(received.name,client_id);                  
+                int second_client = find_free_client(received.name);
+
+                if(second_client == ERROR){
+                    
+                    msg.msg=WAITING_FOR_PLAYER;
+                    msg.type=CONNECT;
+                    if(sendto(clients[client_id].socket_type,&msg, msg_size,0,&clients[client_id].desc, sizeof(clients[client_id].desc))==-1)
+                        perror("server: send waiting for player error");
+
+                }
+                else{
+                connect_procedure(received.name,client_id,second_client);    
+                }              
 
             }
             else{

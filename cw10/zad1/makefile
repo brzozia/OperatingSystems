@@ -5,3 +5,6 @@ server: server.c
 
 klient: klient.c
 	gcc -Wall -g klient.c -o klient
+
+clean:
+	rm -f klient server

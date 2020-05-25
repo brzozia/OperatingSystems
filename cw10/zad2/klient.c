@@ -253,9 +253,8 @@ int main(int argc, char ** argv){
         printf("client: wrong number of arguments\n");
         return 1;
     }
-
+    
     signal(SIGINT,sig_handler);
-
     strcpy(name,argv[1]);
 
     if(strcmp(argv[2],"network")==0){

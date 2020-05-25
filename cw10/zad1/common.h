@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <errno.h>
 
 #define O 0
 #define X 1
@@ -19,7 +20,6 @@
 #define MOVE 4
 #define DISCONNECT 5
 #define CONNECT 6
-#define CANNOT_MOVE_THERE 7
 #define GIVE_NAME 8
 #define FREE 9
 #define WINNER 10

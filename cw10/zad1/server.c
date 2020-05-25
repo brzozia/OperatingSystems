@@ -79,26 +79,47 @@ void exit_handler(void){
             read(clients[i].desc,&msg,msg_size);
 
             if(shutdown(clients[i].desc, SHUT_RDWR)==-1)
-                perror("server: shutdown socket error");
+                perror("server: shutdown cl socket error");
 
             if(close(clients[i].desc)==-1)
-                perror("server: close socket error");
+                perror("server: close cl socket error");
         }
     }
 
     if(shutdown(undesc, SHUT_RDWR)==-1)
-        perror("server: shutdown socket error");
+        perror("server: shutdown socket un error");
 
     if(shutdown(netdesc, SHUT_RDWR)==-1)
-        perror("server: shutdown socket error");
+        perror("server: shutdown socket net  error");
+    
     sem_destroy(&semaf);
     close(netdesc);
     close(undesc);
     unlink(path);
     free(clients);
-    // free(pthread_id);
 }
 
+
+void connect_procedure(int desc, int client_id, int second_client){
+        
+    struct message msg;
+    clients[second_client].playing_with=client_id;
+    clients[client_id].playing_with=second_client;
+    msg.other = rand() % 1;
+
+    strcpy(msg.name,clients[second_client].name);
+    msg.msg=O;
+    msg.type=CONNECT;
+    if(write(clients[client_id].desc,&msg, msg_size)==-1)
+        perror("server: send info 1 error");
+    
+    strcpy(msg.name,clients[client_id].name);
+    msg.msg=X;
+    if(write(clients[second_client].desc,&msg, msg_size)==-1)
+        perror("server: send info 2 error");
+    
+
+}
 
 void unexpected_client_exit(int connected_client){
     struct message msg1;
@@ -107,7 +128,11 @@ void unexpected_client_exit(int connected_client){
     msg1.other=ERROR;
     if(write(clients[connected_client].desc, &msg1, msg_size)==-1)
         perror("server: send waiting for player error");
+    
+    int second_client = find_free_client(clients[connected_client].desc);
 
+    if(second_client != ERROR)
+        connect_procedure(clients[connected_client].desc, connected_client, second_client);
 }
 
 
@@ -126,6 +151,29 @@ void disconnect_client(int i){
 
 }
 
+
+void disconnect_ping(int i){
+
+     clients[i].is_working=DISCONNECT;
+
+    int connected_client = clients[i].playing_with;
+    if(connected_client !=-1){
+        clients[connected_client].playing_with=-1;
+        
+        if(clients[connected_client].is_working==CONNECT){ 
+            unexpected_client_exit(connected_client);  
+        }
+    }
+
+    struct epoll_event epv;
+    epv.data.fd=clients[i].desc;
+    if(epoll_ctl(epoldesc,EPOLL_CTL_DEL,clients[i].desc,&epv)==-1)
+        perror("server: epoll unix ctl error");
+
+    if(close(clients[i].desc)==-1)
+        perror("server: close socket error");
+}
+
 void *pingping(int arg){
     struct message msg1;
     msg1.type=PING;
@@ -139,26 +187,20 @@ void *pingping(int arg){
 
                 if(clients[i].ping==0){
                     clients[i].ping=1;
-                    if(write(clients[i].desc, &msg1, msg_size)==-1)
-                    perror("server: send waiting for player error");
+                    if(write(clients[i].desc, &msg1, msg_size)==-1){
+                       if(errno==EPIPE)
+                            disconnect_ping(i);
+                        else 
+                            perror("server: sendto ping error");
+                    }
+                   
                 }
                 else{
-                    clients[i].is_working=DISCONNECT;
-
-                    int connected_client = clients[i].playing_with;
-                    if(connected_client !=-1){
-                        clients[i].playing_with=-1;
-                        
-                        if(clients[i].is_working==CONNECT){ //
-                            unexpected_client_exit(i);  
-                        }
-                    }
-
-                    disconnect_client(i);
+                   disconnect_ping(i);
                 }
             }
             sem_post(&semaf);
-            sleep(2);
+            sleep(1);
         }   
     }
 }
@@ -302,8 +344,8 @@ int main(int argc, char ** argv){
                 if(find_client_using_name(received.name) == ERROR){
                     strcpy(clients[client_id].name,received.name);
 
-                    int second_client = find_free_client(event.data.fd);
-                    
+                    int second_client = find_free_client(clients[client_id].desc);
+
                     if(second_client == ERROR){
                         
                         msg.msg=WAITING_FOR_PLAYER;
@@ -312,28 +354,14 @@ int main(int argc, char ** argv){
                             perror("server: send waiting for player error");
 
                     }
-                    else{
-                        
-                        clients[second_client].playing_with=client_id;
-                        clients[client_id].playing_with=second_client;
-                        msg.other = rand() % 1;
-
-                        strcpy(msg.name,clients[second_client].name);
-                        msg.msg=O;
-                        msg.type=CONNECT;
-                        if(write(clients[client_id].desc,&msg, msg_size)==-1)
-                            perror("server: send info 1 error");
-                        
-                        strcpy(msg.name,clients[client_id].name);
-                        msg.msg=X;
-                        if(write(clients[second_client].desc,&msg, msg_size)==-1)
-                            perror("server: send info 2 error");
-                    }   
+                    else
+                        connect_procedure(event.data.fd,client_id,second_client);
 
                 }
                 else{
                     msg.msg=ERROR;
                     msg.type=CONNECT;
+                    clients[client_id].is_working=DISCONNECT;
                     if(write(clients[client_id].desc,&msg, msg_size)==-1)
                         perror("server: send name in use error");
                 }

@@ -24,7 +24,7 @@ int main(){
     int sem_no=3; // one to connect with array, one to get number of made packages (packages "to prepare"), one to get number of prepared packages (packages "to send")
 
     key_t memory_key = ftok(getenv("HOME"), 'm');
-     memory_id = sh_get( memory_key,  sizeof(struct sh_struct),  IPC_CREAT | S_IRWXU);
+    memory_id = sh_get( memory_key,  sizeof(struct sh_struct),  IPC_CREAT | S_IRWXU);
 
     struct sh_struct *shared_struct=shmat( memory_id, NULL, S_IRWXU);
     shared_struct->made1=0;

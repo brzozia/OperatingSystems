@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <errno.h>
 
 #define O 0
 #define X 1

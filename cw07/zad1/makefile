@@ -13,7 +13,7 @@ worker3:worker3.c common.h
 	gcc -Wall -g worker3.c -o worker3
 
 clean:
-	 rm -f *.o *.a *.so *.tmp main
+	 rm -f program worker1 worker2 worker3 main
 
 test:
 	./program
