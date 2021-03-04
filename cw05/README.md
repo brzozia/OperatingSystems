@@ -1,6 +1,6 @@
 # Named and unnamed pipes
-* Pipelining command processing
-* Producer and consumer problem with the use of pipes  
+1. Pipelining command processing
+2. Producer and consumer problem with the use of pipes  
 
 ---
 # Potoki nazwane i nienazwane  
