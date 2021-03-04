@@ -1,7 +1,7 @@
 # IPC - Message queues  
 * Simple chat
-  * System V
-  * POSIX
+  1. System V
+  2. POSIX
 
 ---
 # IPC - kolejki komunikatów  
