@@ -6,9 +6,9 @@
 Zadanie 1
 Napisz program współbieżnie wyliczający histogram dla obrazu o wymiarze nxm przy użyciu wątków, zakładając, że obraz jest macierzą reprezentującą obraz. Dla uproszczenia rozważamy jedynie obrazy w 256 odcieniach szarości. Każdy element macierzy jest więc liczbą całkowitą z zakresu 0 do 255. Program należy zaimplementować w różnych wariantach:
   
-## Wariant 1: Podział zadania na podzadania odbywa się na zasadzie dekompozycji w dziedzinie problemu, gdzie dziedziną jest zbiór liczb - każdy wątek zlicza wystąpienia dla określonego zestawu liczb. Zbiór liczb dla wątku można przydzielić w dowolny sposób, ale taki, by każdy wątek dostał inne liczby i zadanie było podzielone równo na wszystkie wątki. (30%)
+ **Wariant 1**: Podział zadania na podzadania odbywa się na zasadzie dekompozycji w dziedzinie problemu, gdzie dziedziną jest zbiór liczb - każdy wątek zlicza wystąpienia dla określonego zestawu liczb. Zbiór liczb dla wątku można przydzielić w dowolny sposób, ale taki, by każdy wątek dostał inne liczby i zadanie było podzielone równo na wszystkie wątki. (30%)
   
-## Wariant 2: Podział dokonywany w dziedzinie problemu dotyczącego obrazu, a nie znaków. 
+**Wariant 2**: Podział dokonywany w dziedzinie problemu dotyczącego obrazu, a nie znaków. 
   
 * Podział blokowy – k-ty wątek zlicza wartości pikseli w pionowym pasku o współrzędnych x-owych w przedziale od (k−1)∗ceil(N/m) do k∗ceil(N/m)−1, gdzie N to szerokość wyjściowego obrazu a m to liczba stworzonych wątków. (35%)
 * Podział cykliczny – k-ty wątek zlicza wartości pikseli, których współrzędne x-owe to: k−1, k−1+m, k−1+2∗m, k−1+3∗m, itd. (ponownie, m to liczba stworzonych wątków). (35%)
