@@ -1,5 +1,5 @@
 # IPC - Message queues  
-* Simple chat
+Simple chat
   1. System V
   2. POSIX
 
