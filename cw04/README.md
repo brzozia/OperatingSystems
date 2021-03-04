@@ -1,7 +1,8 @@
 # Signals
-* Signal handling
-* Effect of the `fork` and` exec` instructions on signal handling settings
-* Transferring signals between programs
+1. Signal handling
+2. Effect of the `fork` and` exec` instructions on signal handling settings
+3. `sigation` flag
+4. Transferring signals between programs
   
  
 ---
